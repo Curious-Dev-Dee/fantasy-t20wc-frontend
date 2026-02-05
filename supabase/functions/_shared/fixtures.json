@@ -1,0 +1,387 @@
+[
+    {
+        "matchId":  1,
+        "teams":  [
+                      "Pakistan",
+                      "Netherlands"
+                  ]
+    },
+    {
+        "matchId":  2,
+        "teams":  [
+                      "West Indies",
+                      "Scotland"
+                  ]
+    },
+    {
+        "matchId":  3,
+        "teams":  [
+                      "India",
+                      "United States of America"
+                  ]
+    },
+    {
+        "matchId":  4,
+        "teams":  [
+                      "New Zealand",
+                      "Afghanistan"
+                  ]
+    },
+    {
+        "matchId":  5,
+        "teams":  [
+                      "England",
+                      "Nepal"
+                  ]
+    },
+    {
+        "matchId":  6,
+        "teams":  [
+                      "Sri Lanka",
+                      "Ireland"
+                  ]
+    },
+    {
+        "matchId":  7,
+        "teams":  [
+                      "Scotland",
+                      "Italy"
+                  ]
+    },
+    {
+        "matchId":  8,
+        "teams":  [
+                      "Zimbabwe",
+                      "Oman"
+                  ]
+    },
+    {
+        "matchId":  9,
+        "teams":  [
+                      "South Africa",
+                      "Canada"
+                  ]
+    },
+    {
+        "matchId":  10,
+        "teams":  [
+                      "Netherlands",
+                      "Namibia"
+                  ]
+    },
+    {
+        "matchId":  11,
+        "teams":  [
+                      "New Zealand",
+                      "United Arab Emirates"
+                  ]
+    },
+    {
+        "matchId":  12,
+        "teams":  [
+                      "Pakistan",
+                      "United States of America"
+                  ]
+    },
+    {
+        "matchId":  13,
+        "teams":  [
+                      "South Africa",
+                      "Afghanistan"
+                  ]
+    },
+    {
+        "matchId":  14,
+        "teams":  [
+                      "Australia",
+                      "Ireland"
+                  ]
+    },
+    {
+        "matchId":  15,
+        "teams":  [
+                      "England",
+                      "West Indies"
+                  ]
+    },
+    {
+        "matchId":  16,
+        "teams":  [
+                      "Sri Lanka",
+                      "Oman"
+                  ]
+    },
+    {
+        "matchId":  17,
+        "teams":  [
+                      "Nepal",
+                      "Italy"
+                  ]
+    },
+    {
+        "matchId":  18,
+        "teams":  [
+                      "India",
+                      "Namibia"
+                  ]
+    },
+    {
+        "matchId":  19,
+        "teams":  [
+                      "Australia",
+                      "Zimbabwe"
+                  ]
+    },
+    {
+        "matchId":  20,
+        "teams":  [
+                      "Canada",
+                      "United Arab Emirates"
+                  ]
+    },
+    {
+        "matchId":  21,
+        "teams":  [
+                      "United States of America",
+                      "Netherlands"
+                  ]
+    },
+    {
+        "matchId":  22,
+        "teams":  [
+                      "Ireland",
+                      "Oman"
+                  ]
+    },
+    {
+        "matchId":  23,
+        "teams":  [
+                      "England",
+                      "Scotland"
+                  ]
+    },
+    {
+        "matchId":  24,
+        "teams":  [
+                      "New Zealand",
+                      "South Africa"
+                  ]
+    },
+    {
+        "matchId":  25,
+        "teams":  [
+                      "West Indies",
+                      "Nepal"
+                  ]
+    },
+    {
+        "matchId":  26,
+        "teams":  [
+                      "United States of America",
+                      "Namibia"
+                  ]
+    },
+    {
+        "matchId":  27,
+        "teams":  [
+                      "India",
+                      "Pakistan"
+                  ]
+    },
+    {
+        "matchId":  28,
+        "teams":  [
+                      "Afghanistan",
+                      "United Arab Emirates"
+                  ]
+    },
+    {
+        "matchId":  29,
+        "teams":  [
+                      "England",
+                      "Italy"
+                  ]
+    },
+    {
+        "matchId":  30,
+        "teams":  [
+                      "Australia",
+                      "Sri Lanka"
+                  ]
+    },
+    {
+        "matchId":  31,
+        "teams":  [
+                      "New Zealand",
+                      "Canada"
+                  ]
+    },
+    {
+        "matchId":  32,
+        "teams":  [
+                      "Ireland",
+                      "Zimbabwe"
+                  ]
+    },
+    {
+        "matchId":  33,
+        "teams":  [
+                      "Scotland",
+                      "Nepal"
+                  ]
+    },
+    {
+        "matchId":  34,
+        "teams":  [
+                      "South Africa",
+                      "United Arab Emirates"
+                  ]
+    },
+    {
+        "matchId":  35,
+        "teams":  [
+                      "Pakistan",
+                      "Namibia"
+                  ]
+    },
+    {
+        "matchId":  36,
+        "teams":  [
+                      "India",
+                      "Netherlands"
+                  ]
+    },
+    {
+        "matchId":  37,
+        "teams":  [
+                      "West Indies",
+                      "Italy"
+                  ]
+    },
+    {
+        "matchId":  38,
+        "teams":  [
+                      "Sri Lanka",
+                      "Zimbabwe"
+                  ]
+    },
+    {
+        "matchId":  39,
+        "teams":  [
+                      "Afghanistan",
+                      "Canada"
+                  ]
+    },
+    {
+        "matchId":  40,
+        "teams":  [
+                      "Australia",
+                      "Oman"
+                  ]
+    },
+    {
+        "matchId":  41,
+        "teams":  [
+                      "TBC",
+                      "TBC"
+                  ]
+    },
+    {
+        "matchId":  42,
+        "teams":  [
+                      "TBC",
+                      "TBC"
+                  ]
+    },
+    {
+        "matchId":  43,
+        "teams":  [
+                      "TBC",
+                      "TBC"
+                  ]
+    },
+    {
+        "matchId":  44,
+        "teams":  [
+                      "TBC",
+                      "TBC"
+                  ]
+    },
+    {
+        "matchId":  45,
+        "teams":  [
+                      "TBC",
+                      "TBC"
+                  ]
+    },
+    {
+        "matchId":  46,
+        "teams":  [
+                      "TBC",
+                      "TBC"
+                  ]
+    },
+    {
+        "matchId":  47,
+        "teams":  [
+                      "TBC",
+                      "TBC"
+                  ]
+    },
+    {
+        "matchId":  48,
+        "teams":  [
+                      "TBC",
+                      "TBC"
+                  ]
+    },
+    {
+        "matchId":  49,
+        "teams":  [
+                      "TBC",
+                      "TBC"
+                  ]
+    },
+    {
+        "matchId":  50,
+        "teams":  [
+                      "TBC",
+                      "TBC"
+                  ]
+    },
+    {
+        "matchId":  51,
+        "teams":  [
+                      "TBC",
+                      "TBC"
+                  ]
+    },
+    {
+        "matchId":  52,
+        "teams":  [
+                      "TBC",
+                      "TBC"
+                  ]
+    },
+    {
+        "matchId":  53,
+        "teams":  [
+                      "TBC",
+                      "TBC"
+                  ]
+    },
+    {
+        "matchId":  54,
+        "teams":  [
+                      "TBC",
+                      "TBC"
+                  ]
+    },
+    {
+        "matchId":  55,
+        "teams":  [
+                      "TBC",
+                      "TBC"
+                  ]
+    }
+]

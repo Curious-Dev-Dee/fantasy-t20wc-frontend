@@ -129,15 +129,15 @@ export default function LeaguesPage() {
     });
     return {
       ...league,
-      members: [
-        ...league.members,
-        {
-          teamId: myTeamId,
-          profile.team_name || "Team",
-          rank: nextRank,
-          score,
-        },
-      ],
+        members: [
+          ...league.members,
+          {
+            teamId: myTeamId,
+            teamName: profile.team_name || "Team",
+            rank: nextRank,
+            score,
+          },
+        ],
     };
   };
 

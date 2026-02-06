@@ -163,6 +163,20 @@ export default function EditTeamPage() {
     return teams.length ? teams : null;
   }, [matchFilter, tournament.nextMatches]);
 
+  const matchPriorityMap = useMemo(() => {
+    const map = new Map<string, number>();
+    (tournament.nextMatches ?? []).forEach(match => {
+      const start = new Date(match.startTimeUTC).getTime();
+      match.teams.map(normalizeTeamName).forEach(teamName => {
+        const existing = map.get(teamName);
+        if (existing === undefined || start < existing) {
+          map.set(teamName, start);
+        }
+      });
+    });
+    return map;
+  }, [tournament.nextMatches]);
+
   const filteredPlayers = useMemo(() => {
     return players.filter(player => {
       if (roleFilter !== "ALL" && player.role !== roleFilter) return false;
@@ -184,6 +198,16 @@ export default function EditTeamPage() {
       return true;
     });
   }, [roleFilter, countryFilter, pointsFilter, matchFilterTeams, searchTerm]);
+
+  const sortedPlayers = useMemo(() => {
+    const priority = (player: (typeof players)[number]) =>
+      matchPriorityMap.get(player.country) ?? Number.POSITIVE_INFINITY;
+    return [...filteredPlayers].sort((a, b) => {
+      const diff = priority(a) - priority(b);
+      if (diff !== 0) return diff;
+      return a.name.localeCompare(b.name);
+    });
+  }, [filteredPlayers, matchPriorityMap]);
 
   const savedSet = useMemo(
     () => new Set(savedSnapshot.players),
@@ -374,7 +398,7 @@ export default function EditTeamPage() {
                     : "text-slate-300"
                 }`}
               >
-                Selected
+                My XI
               </button>
               <button
                 onClick={() => setActiveTab("available")}
@@ -384,7 +408,7 @@ export default function EditTeamPage() {
                     : "text-slate-300"
                 }`}
               >
-                Available
+                Player Pool
               </button>
             </div>
             {activeTab === "available" && (
@@ -486,13 +510,45 @@ export default function EditTeamPage() {
               activeTab === "available" ? "block" : "hidden"
             }`}
           >
-            <h2 className="text-lg font-semibold">Available Players</h2>
+            <h2 className="text-lg font-semibold">Player Pool</h2>
 
-            <div className="text-xs text-slate-400">
-              Showing {filteredPlayers.length} players
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { label: "All", value: "ALL" },
+                { label: "WK", value: "WK" },
+                { label: "BAT", value: "BAT" },
+                { label: "AR", value: "AR" },
+                { label: "BOWL", value: "BOWL" },
+              ].map(role => (
+                <button
+                  key={role.value}
+                  type="button"
+                  onClick={() => setRoleFilter(role.value)}
+                  className={`px-3 py-1 rounded-full text-[11px] border transition ${
+                    roleFilter === role.value
+                      ? "bg-indigo-600 text-white border-indigo-500"
+                      : "bg-white/5 text-slate-300 border-white/10"
+                  }`}
+                >
+                  {role.label}
+                </button>
+              ))}
             </div>
 
-            {filteredPlayers.map(player => {
+            <div>
+              <input
+                value={searchTerm}
+                onChange={event => setSearchTerm(event.target.value)}
+                placeholder="Search player"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-slate-500"
+              />
+            </div>
+
+            <div className="text-xs text-slate-400">
+              Showing {sortedPlayers.length} players
+            </div>
+
+            {sortedPlayers.map(player => {
               const selected = team.workingTeam.players.includes(player.id);
               const canAdd = team.canAddPlayer(player.id);
 

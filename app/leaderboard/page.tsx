@@ -149,7 +149,10 @@ export default function LeaderboardPage() {
                 });
           return {
             userId: member.user_id,
-            name: memberNameMap.get(member.user_id) || "Team",
+            name:
+              memberNameMap.get(member.user_id) ||
+              member.team_name ||
+              "Team",
             score,
           };
         });

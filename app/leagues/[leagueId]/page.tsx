@@ -196,7 +196,7 @@ export default function LeagueDetailPage() {
         const name =
           member.user_id === user.id
             ? (profile.team_name || "Team")
-            : memberNames[member.user_id] || "Team";
+            : memberNames[member.user_id] || member.team_name || "Team";
         return {
           teamId: member.user_id,
           teamName: name,

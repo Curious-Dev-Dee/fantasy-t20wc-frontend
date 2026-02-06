@@ -405,7 +405,9 @@ export default function EditTeamPage() {
                   className={`border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between gap-3 transition-all duration-200 cursor-pointer ${
                     recentId === player!.id ? "ring-2 ring-indigo-400/70" : ""
                   }`}
-                  onClick={() => {
+                  onClick={event => {
+                    const target = event.target as HTMLElement;
+                    if (target.closest("button")) return;
                     setActivePlayerId(player!.id);
                     setShowPlayerSheet(true);
                   }}

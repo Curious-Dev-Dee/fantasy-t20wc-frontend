@@ -77,8 +77,10 @@ export default function TeamPage() {
       if (!fieldWrapRef.current || !fieldRef.current) return;
       const wrap = fieldWrapRef.current.getBoundingClientRect();
       const field = fieldRef.current.getBoundingClientRect();
-      if (field.height === 0) return;
-      const nextScale = Math.min(1, wrap.height / field.height);
+      if (field.height === 0 || field.width === 0) return;
+      const heightScale = wrap.height / field.height;
+      const widthScale = wrap.width / field.width;
+      const nextScale = Math.min(heightScale, widthScale);
       setFieldScale(Number.isFinite(nextScale) ? nextScale : 1);
     };
     computeScale();

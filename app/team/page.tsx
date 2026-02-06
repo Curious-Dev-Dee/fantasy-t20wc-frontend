@@ -78,47 +78,9 @@ export default function TeamPage() {
   return (
     <div className="min-h-screen bg-[#0B0F1A] text-white px-4 sm:px-6 py-8">
       <div className="max-w-6xl mx-auto space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold">{teamName}</h1>
-            {tournament.nextMatch && (
-              <p className="text-[11px] text-indigo-300 mt-1">
-                Next Match #{tournament.nextMatch.matchId} {teamShort(tournament.nextMatch.teams[0])} vs {teamShort(tournament.nextMatch.teams[1])} locks at{" "}
-                <span className="whitespace-nowrap">
-                  {new Date(tournament.nextMatch.startTimeUTC).toLocaleString(
-                    [],
-                    {
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                    }
-                  )}
-                </span>
-              </p>
-            )}
-            {lockLabel && (
-              <span className="inline-block mt-2 text-xs px-2.5 py-1 rounded-full bg-red-500/25 text-red-100 border border-red-400/50 shadow-[0_0_10px_rgba(248,113,113,0.15)]">
-                {lockLabel}
-                <button
-                  type="button"
-                  onClick={() => setShowLockTip(prev => !prev)}
-                  ref={lockTipRef}
-                  className="relative group ml-2 text-red-100"
-                >
-                  i
-                  <span
-                    className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 w-60 rounded-lg border border-white/10 bg-[#0F1626] px-3 py-2 text-[10px] text-slate-200 opacity-0 pointer-events-none transition group-hover:opacity-100 ${
-                      showLockTip ? "opacity-100" : ""
-                    }`}
-                  >
-                    Edits pause for 10 minutes from match start.
-                  </span>
-                </button>
-              </span>
-            )}
-          </div>
-          <div className="flex gap-4 text-[11px] sm:justify-end">
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-semibold">{teamName}</h1>
+          <div className="flex gap-4 text-[11px]">
             <Link href="/" className="text-indigo-300 hover:underline">
               Home
             </Link>
@@ -133,31 +95,6 @@ export default function TeamPage() {
               </Link>
             )}
           </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-300">
-          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
-            Budget {team.totalBudget} / {team.limits.MAX_BUDGET}
-          </span>
-          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
-            Subs Left {team.subsLeftLabel}
-          </span>
-          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
-            Total Score{" "}
-            {team.lockedTeams.length > 0
-              ? scoreLockedTeams({
-                  lockedTeams: team.lockedTeams,
-                  playerRoleMap: playerRoleMap.current,
-                  statsMap: statsMap.current,
-                })
-              : scoreTeam({
-                  playerIds: team.workingTeam.players,
-                  captainId: team.workingTeam.captainId,
-                  viceCaptainId: team.workingTeam.viceCaptainId,
-                  playerRoleMap: playerRoleMap.current,
-                  statsMap: statsMap.current,
-                })}
-          </span>
         </div>
 
         <div className="space-y-3">

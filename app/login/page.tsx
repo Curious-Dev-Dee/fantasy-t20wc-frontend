@@ -53,6 +53,19 @@ export default function LoginPage() {
       setMessage("Enter email and password.");
       return;
     }
+    if (mode === "signup") {
+      if (
+        !fullName ||
+        !teamName ||
+        !contactNumber ||
+        !country ||
+        !stateName ||
+        !favoriteTeam
+      ) {
+        setMessage("Please fill all details to create your account.");
+        return;
+      }
+    }
     setLoading(true);
     if (mode === "signup") {
       const { error } = await supabase.auth.signUp({
@@ -138,7 +151,7 @@ export default function LoginPage() {
             <p className="text-xs text-slate-300">
               {mode === "signin"
                 ? "Sign in to manage your team and leagues."
-                : "Start with email and password. Finish details later."}
+                : "Fill the details once to set up your team."}
             </p>
           </div>
 
@@ -199,70 +212,65 @@ export default function LoginPage() {
             )}
 
             {mode === "signup" && (
-              <details className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                <summary className="cursor-pointer text-xs text-slate-300">
-                  Add profile details (optional)
-                </summary>
-                <div className="mt-3 space-y-4">
+              <div className="space-y-4">
+                <label className="block text-xs text-slate-300">
+                  Full Name
+                  <input
+                    value={fullName}
+                    onChange={event => setFullName(event.target.value)}
+                    className="mt-1 w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/50"
+                  />
+                </label>
+                <label className="block text-xs text-slate-300">
+                  Team Name
+                  <input
+                    value={teamName}
+                    onChange={event => setTeamName(event.target.value)}
+                    className="mt-1 w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/50"
+                  />
+                </label>
+                <label className="block text-xs text-slate-300">
+                  Contact Number
+                  <input
+                    value={contactNumber}
+                    onChange={event => setContactNumber(event.target.value)}
+                    className="mt-1 w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/50"
+                  />
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <label className="block text-xs text-slate-300">
-                    Full Name
+                    Country
                     <input
-                      value={fullName}
-                      onChange={event => setFullName(event.target.value)}
+                      value={country}
+                      onChange={event => setCountry(event.target.value)}
                       className="mt-1 w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/50"
                     />
                   </label>
                   <label className="block text-xs text-slate-300">
-                    Team Name
+                    State
                     <input
-                      value={teamName}
-                      onChange={event => setTeamName(event.target.value)}
+                      value={stateName}
+                      onChange={event => setStateName(event.target.value)}
                       className="mt-1 w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/50"
                     />
-                  </label>
-                  <label className="block text-xs text-slate-300">
-                    Contact Number
-                    <input
-                      value={contactNumber}
-                      onChange={event => setContactNumber(event.target.value)}
-                      className="mt-1 w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/50"
-                    />
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <label className="block text-xs text-slate-300">
-                      Country
-                      <input
-                        value={country}
-                        onChange={event => setCountry(event.target.value)}
-                        className="mt-1 w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/50"
-                      />
-                    </label>
-                    <label className="block text-xs text-slate-300">
-                      State
-                      <input
-                        value={stateName}
-                        onChange={event => setStateName(event.target.value)}
-                        className="mt-1 w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/50"
-                      />
-                    </label>
-                  </div>
-                  <label className="block text-xs text-slate-300">
-                    Favorite Team
-                    <select
-                      value={favoriteTeam}
-                      onChange={event => setFavoriteTeam(event.target.value)}
-                      className="mt-1 w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/50"
-                    >
-                      <option value="">Select team</option>
-                      {teamOptions.map(team => (
-                        <option key={team} value={team}>
-                          {team}
-                        </option>
-                      ))}
-                    </select>
                   </label>
                 </div>
-              </details>
+                <label className="block text-xs text-slate-300">
+                  Favorite Team
+                  <select
+                    value={favoriteTeam}
+                    onChange={event => setFavoriteTeam(event.target.value)}
+                    className="mt-1 w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/50"
+                  >
+                    <option value="">Select team</option>
+                    {teamOptions.map(team => (
+                      <option key={team} value={team}>
+                        {team}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
             )}
 
             <button

@@ -8,7 +8,6 @@ import {
   upsertUserProfile,
   type UserProfileRow,
 } from "@/utils/profilePersistence";
-import { upsertUserTeam } from "@/utils/teamPersistence";
 
 const STORAGE_KEY = "fantasy_user_profile";
 
@@ -61,9 +60,6 @@ export function useProfile() {
         };
         setProfile(mapped);
         setJSON(scopedKey(STORAGE_KEY, user.id), mapped);
-        if (remote.team_name) {
-          await upsertUserTeam(user.id, { team_name: remote.team_name });
-        }
         setLoading(false);
         return;
       }
@@ -94,9 +90,6 @@ export function useProfile() {
           full_name_edit_used: derived.full_name_edit_used,
           team_name_edit_used: derived.team_name_edit_used,
         });
-        if (derived.team_name) {
-          await upsertUserTeam(user.id, { team_name: derived.team_name });
-        }
         setProfile(derived);
         setJSON(scopedKey(STORAGE_KEY, user.id), derived);
       }
@@ -121,9 +114,6 @@ export function useProfile() {
         full_name_edit_used: next.full_name_edit_used,
         team_name_edit_used: next.team_name_edit_used,
       });
-      if (next.team_name) {
-        await upsertUserTeam(user.id, { team_name: next.team_name });
-      }
     }
   };
 

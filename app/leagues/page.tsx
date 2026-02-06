@@ -9,7 +9,7 @@ import { useTeam } from "@/hooks/useTeam";
 import { useMatchStats } from "@/hooks/useMatchStats";
 import { scoreTeam } from "@/utils/scoring";
 import { players } from "@/data/players";
-import { useTeamName } from "@/hooks/useTeamName";
+import { useProfile } from "@/hooks/useProfile";
 import { getJSON, setJSON } from "@/utils/storage";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/utils/supabaseClient";
@@ -29,7 +29,7 @@ type CreatedLeague = {
 export default function LeaguesPage() {
   const tournament = useTournament();
   const team = useTeam();
-  const { teamName } = useTeamName();
+  const { profile } = useProfile();
   const { stats } = useMatchStats();
   const { user, ready, isConfigured } = useAuth();
   const [leagueName, setLeagueName] = useState("");
@@ -133,7 +133,7 @@ export default function LeaguesPage() {
         ...league.members,
         {
           teamId: myTeamId,
-          teamName,
+          profile.team_name || "Team",
           rank: nextRank,
           score,
         },
@@ -156,7 +156,7 @@ export default function LeaguesPage() {
         const result = await createLeague(
           leagueName.trim(),
           user.id,
-          teamName
+          profile.team_name || "Team"
         );
         if (!result || !result.league) {
           setJoinMessage(
@@ -210,7 +210,7 @@ export default function LeaguesPage() {
 
     if (user && isConfigured) {
       const joinRemote = async () => {
-        const result = await joinLeagueByCode(code, user.id, teamName);
+        const result = await joinLeagueByCode(code, user.id, profile.team_name || "Team");
         if (!result || !result.league) {
           setJoinMessage(
             result?.error || "Invalid league code."

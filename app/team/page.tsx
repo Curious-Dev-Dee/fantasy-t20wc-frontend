@@ -15,13 +15,13 @@ import {
   type PlayerRole,
 } from "@/utils/scoring";
 import { useMatchStats } from "@/hooks/useMatchStats";
-import { useTeamName } from "@/hooks/useTeamName";
+import { useProfile } from "@/hooks/useProfile";
 
 export default function TeamPage() {
   const team = useTeam();
   const tournament = useTournament();
   const { user } = useAuth();
-  const { teamName } = useTeamName();
+  const { profile } = useProfile();
   const { stats } = useMatchStats();
 
   const [showLockTip, setShowLockTip] = useState(false);
@@ -101,7 +101,7 @@ export default function TeamPage() {
 
                   <div className="absolute top-[3%] left-[4%] right-[4%] flex items-center justify-between text-[10px] sm:text-[11px] text-slate-100">
                     <span className="font-semibold truncate max-w-[55%]">
-                      {teamName}
+                      {profile.team_name || "Team"}
                     </span>
                     <div className="flex gap-2">
                       <Link

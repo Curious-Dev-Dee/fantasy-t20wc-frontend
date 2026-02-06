@@ -8,7 +8,6 @@ import { useTeam } from "@/hooks/useTeam";
 import { useMatchStats } from "@/hooks/useMatchStats";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
-import { useTeamName } from "@/hooks/useTeamName";
 import { players } from "@/data/players";
 import { fixtures } from "@/data/fixtures";
 import { scoreLockedTeams, scoreTeam } from "@/utils/scoring";
@@ -41,7 +40,6 @@ export default function HomePage() {
   const router = useRouter();
   const { user, ready } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
-  const { teamName } = useTeamName();
   const tournament = useTournament();
   const team = useTeam();
   const { stats } = useMatchStats();
@@ -216,13 +214,12 @@ export default function HomePage() {
         );
         let memberTeams: Array<{
           user_id: string;
-          team_name: string | null;
           working_team: any;
         }> = [];
         if (allMemberIds.length > 0 && supabase) {
           const { data } = await supabase
             .from("user_teams")
-            .select("user_id, team_name, working_team")
+            .select("user_id, working_team")
             .in("user_id", allMemberIds);
           memberTeams = (data as any[]) || [];
         }
@@ -302,7 +299,7 @@ export default function HomePage() {
   }
 
   const welcomeName = profile.full_name || "Player";
-  const displayTeamName = profile.team_name || teamName;
+  const displayTeamName = profile.team_name || "Team";
 
   return (
     <div className="min-h-screen bg-[#0B0F1A] text-slate-200 pb-24">

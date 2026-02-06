@@ -11,7 +11,7 @@ import { scoreLockedTeams, scoreTeam } from "@/utils/scoring";
 import { players } from "@/data/players";
 import { useTeam } from "@/hooks/useTeam";
 import { leaderboardTeams as baseLeaderboardTeams, LeaderboardTeam } from "@/data/leaderboard";
-import { useTeamName } from "@/hooks/useTeamName";
+import { useProfile } from "@/hooks/useProfile";
 import { getJSON } from "@/utils/storage";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -36,13 +36,14 @@ export default function LeagueDetailPage() {
   const [loaded, setLoaded] = useState(false);
   const { stats } = useMatchStats();
   const myTeam = useTeam();
-  const { teamName } = useTeamName();
+  const { profile } = useProfile();
   const { user, ready, isConfigured } = useAuth();
   const [leaderboardTeams, setLeaderboardTeams] =
     useState<LeaderboardTeam[]>(baseLeaderboardTeams);
   const [remoteLeague, setRemoteLeague] = useState<LeagueRow | null>(null);
   const [remoteMembers, setRemoteMembers] = useState<LeagueMemberRow[]>([]);
   const [memberTeams, setMemberTeams] = useState<UserTeamRow[]>([]);
+  const [memberNames, setMemberNames] = useState<Record<string, string>>({});
   const [lockedHistory, setLockedHistory] = useState<LockedHistoryRow[]>([]);
 
   useEffect(() => {
@@ -64,6 +65,19 @@ export default function LeagueDetailPage() {
             .in("user_id", ids);
           if (data) {
             setMemberTeams(data as UserTeamRow[]);
+          }
+          const { data: profiles } = await supabase
+            .from("user_profiles")
+            .select("user_id, team_name")
+            .in("user_id", ids);
+          if (profiles) {
+            const map: Record<string, string> = {};
+            profiles.forEach(profileRow => {
+              if (profileRow.team_name) {
+                map[profileRow.user_id] = profileRow.team_name;
+              }
+            });
+            setMemberNames(map);
           }
         }
         setLoaded(true);
@@ -181,8 +195,8 @@ export default function LeagueDetailPage() {
               });
         const name =
           member.user_id === user.id
-            ? teamName
-            : member.team_name || teamRow?.team_name || "Team";
+            ? (profile.team_name || "Team")
+            : memberNames[member.user_id] || "Team";
         return {
           teamId: member.user_id,
           teamName: name,
@@ -218,7 +232,7 @@ export default function LeagueDetailPage() {
         member.teamId === "my-team"
           ? myTeamScore
           : teamScoreMap.get(member.teamId) ?? member.score;
-      const name = member.teamId === "my-team" ? teamName : member.teamName;
+      const name = member.teamId === "my-team" ? (profile.team_name || "Team") : member.teamName;
       return {
         ...member,
         score,
@@ -240,7 +254,8 @@ export default function LeagueDetailPage() {
     leaderboardTeams,
     stats,
     myTeamScore,
-    teamName,
+    profile.team_name,
+    memberNames,
     remoteMembers,
     memberTeams,
     user,

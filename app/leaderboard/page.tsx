@@ -102,15 +102,24 @@ export default function LeaderboardPage() {
         const memberIds = members.map(member => member.user_id);
         let memberTeams: Array<{
           user_id: string;
-          team_name: string | null;
           working_team: any;
         }> = [];
+        let memberNameMap = new Map<string, string>();
         if (memberIds.length > 0 && supabase) {
           const { data } = await supabase
             .from("user_teams")
-            .select("user_id, team_name, working_team")
+            .select("user_id, working_team")
             .in("user_id", memberIds);
           memberTeams = (data as any[]) || [];
+          const { data: profiles } = await supabase
+            .from("user_profiles")
+            .select("user_id, team_name")
+            .in("user_id", memberIds);
+          (profiles || []).forEach(profile => {
+            if (profile.team_name) {
+              memberNameMap.set(profile.user_id, profile.team_name);
+            }
+          });
         }
 
         const scored = members.map(member => {
@@ -140,7 +149,7 @@ export default function LeaderboardPage() {
                 });
           return {
             userId: member.user_id,
-            name: teamRow?.team_name || "Team",
+            name: memberNameMap.get(member.user_id) || "Team",
             score,
           };
         });

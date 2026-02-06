@@ -277,75 +277,68 @@ export default function EditTeamPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0B0F1A] text-white px-4 sm:px-6 py-8">
-      <div className="max-w-6xl mx-auto space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold">Edit Team</h1>
-            <p className="text-[11px] text-indigo-300 mt-1">
-              Next Match: {nextMatchLabel} - Lock at{" "}
-              {formatLocalTime(tournament.nextMatch?.startTimeUTC ?? null)} -{" "}
-              {isLockWindow
-                ? `Locked until ${formatLocalTime(lockEndsAt)}`
-                : mounted
-                ? `Lock in ${countdown}`
-                : "Lock in --:--:--"}
-            </p>
-            {lockBadgeLabel && (
-              <span className="inline-block mt-2 text-xs px-2.5 py-1 rounded-full bg-red-500/25 text-red-100 border border-red-400/50 shadow-[0_0_10px_rgba(248,113,113,0.15)]">
-                {lockBadgeLabel}
-                <button
-                  type="button"
-                  onClick={() => setShowLockTip(prev => !prev)}
-                  ref={lockTipRef}
-                className="relative group ml-2 text-red-100"
+    <div className="min-h-screen bg-[#0B0F1A] text-white px-4 sm:px-6 py-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold">Edit Team</h1>
+              <p className="text-[11px] text-indigo-300 mt-1">
+                Next Match: {nextMatchLabel} ·{" "}
+                {formatLocalTime(tournament.nextMatch?.startTimeUTC ?? null)} ·{" "}
+                {isLockWindow
+                  ? `Locked until ${formatLocalTime(lockEndsAt)}`
+                  : mounted
+                  ? `Lock in ${countdown}`
+                  : "Lock in --:--:--"}
+              </p>
+            </div>
+            <div className="flex gap-2 text-[11px]">
+              <Link href="/" className="text-indigo-300 hover:underline">
+                Home
+              </Link>
+              <Link href="/team" className="text-indigo-300 hover:underline">
+                View Team
+              </Link>
+            </div>
+          </div>
+
+          {lockBadgeLabel && (
+            <span className="inline-flex items-center gap-2 text-[11px] px-2.5 py-1 rounded-full bg-red-500/25 text-red-100 border border-red-400/50 shadow-[0_0_10px_rgba(248,113,113,0.15)] w-fit">
+              {lockBadgeLabel}
+              <button
+                type="button"
+                onClick={() => setShowLockTip(prev => !prev)}
+                ref={lockTipRef}
+                className="relative group text-red-100"
+              >
+                i
+                <span
+                  className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 w-60 rounded-lg border border-white/10 bg-[#0F1626] px-3 py-2 text-[10px] text-slate-200 opacity-0 pointer-events-none transition group-hover:opacity-100 ${
+                    showLockTip ? "opacity-100" : ""
+                  }`}
                 >
-                  i
-                  <span
-                    className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 w-60 rounded-lg border border-white/10 bg-[#0F1626] px-3 py-2 text-[10px] text-slate-200 opacity-0 pointer-events-none transition group-hover:opacity-100 ${
-                      showLockTip ? "opacity-100" : ""
-                    }`}
-                  >
-                    Edits are paused for 10 minutes from match start.
-                  </span>
-                </button>
-              </span>
-            )}
-          </div>
-          <div className="flex gap-4 text-[11px]">
-            <Link href="/" className="text-indigo-300 hover:underline">
-              Home
-            </Link>
-            <Link
-              href="/team"
-              className="text-indigo-300 hover:underline"
-            >
-              View Team
-            </Link>
-          </div>
+                  Edits are paused for 10 minutes from match start.
+                </span>
+              </button>
+            </span>
+          )}
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-          <SummaryCard
-            label="Budget"
-            value={`${team.totalBudget} / ${team.limits.MAX_BUDGET}`}
-            compact
-          />
-          <SummaryCard
-            label="Stars"
-            value={`${team.starCount} / ${team.limits.MAX_STAR_PLAYERS}`}
-            compact
-          />
-          <SummaryCard
-            label="Subs Left"
-            value={team.subsLeftLabel}
-            compact
-          />
-          <SummaryCard
-            label="Roles"
-            value={`WK ${team.roleCounts.WK} | BAT ${team.roleCounts.BAT} | AR ${team.roleCounts.AR} | BOWL ${team.roleCounts.BOWL}`}
-            compact
-          />
+        <div className="flex items-center gap-2 text-[10px] text-slate-200 overflow-x-auto">
+          <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 whitespace-nowrap">
+            Budget {team.totalBudget}/{team.limits.MAX_BUDGET}
+          </span>
+          <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 whitespace-nowrap">
+            Stars {team.starCount}/{team.limits.MAX_STAR_PLAYERS}
+          </span>
+          <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 whitespace-nowrap">
+            Subs {team.subsLeftLabel}
+          </span>
+          <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 whitespace-nowrap">
+            Roles WK {team.roleCounts.WK} · BAT {team.roleCounts.BAT} · AR{" "}
+            {team.roleCounts.AR} · BOWL {team.roleCounts.BOWL}
+          </span>
         </div>
 
         <div className="text-[11px] text-slate-300">

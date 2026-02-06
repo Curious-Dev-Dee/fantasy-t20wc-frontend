@@ -9,7 +9,7 @@ import { isAdminEmail } from "@/utils/admin";
 export default function Header() {
   const { user } = useAuth();
   const pathname = usePathname();
-  if (pathname === "/team") return null;
+  if (pathname === "/team" || pathname === "/team/edit") return null;
   const hideNav = !user || pathname === "/login";
   const showAdmin =
     process.env.NEXT_PUBLIC_SHOW_ADMIN === "true" &&

@@ -13,6 +13,7 @@ import {
   scorePlayerBreakdown,
   scorePlayerMatches,
   scoreTeam,
+  type PlayerRole,
 } from "@/utils/scoring";
 import { useMatchStats } from "@/hooks/useMatchStats";
 import { getJSON } from "@/utils/storage";
@@ -86,7 +87,7 @@ export default function LeaderboardTeamPage() {
   const { stats } = useMatchStats();
 
   const playerRoleMap = useMemo(
-    () => new Map(players.map(player => [player.id, player.role])),
+    () => new Map(players.map(player => [player.id, player.role] as const)),
     []
   );
 
@@ -284,7 +285,7 @@ export default function LeaderboardTeamPage() {
           </div>
           {roster.map(player => {
             const playerId = player!.id;
-            const role = playerRoleMap.get(playerId) || "BAT";
+            const role: PlayerRole = playerRoleMap.get(playerId) || "BAT";
             const allMatches = statsMap.get(playerId) || [];
             const matches = showAllMatches
               ? allMatches
@@ -422,7 +423,7 @@ function GroundRow({
   players: Array<Player | undefined>;
   team: LeaderboardTeam;
   statsMap: Map<string, any>;
-  playerRoleMap: Map<string, string>;
+  playerRoleMap: Map<string, PlayerRole>;
 }) {
   const validPlayers = players.filter(Boolean);
   if (validPlayers.length === 0) return null;
@@ -435,7 +436,7 @@ function GroundRow({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {validPlayers.map(player => {
           const id = player!.id;
-          const role = playerRoleMap.get(id) || player!.role;
+          const role: PlayerRole = playerRoleMap.get(id) || player!.role;
           const matches = (statsMap as any).get(id) || [];
           const isCaptain = team.captainId === id;
           const isVice = team.viceCaptainId === id;

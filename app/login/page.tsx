@@ -129,7 +129,7 @@ export default function LoginPage() {
             Build your XI. Lock on time. Win the league.
           </h1>
           <p className="text-sm text-slate-400 max-w-md leading-relaxed">
-            Experience XI lets you draft, track, and compete with friends in a
+            Fantasy Cricket Season lets you draft, track, and compete with friends in a
             premium T20 fantasy experience.
           </p>
           <div className="flex flex-wrap gap-2 text-[11px] text-slate-400">

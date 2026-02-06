@@ -20,7 +20,7 @@ export default function Header() {
       <div className="max-w-6xl mx-auto flex flex-col items-center text-center sm:items-start sm:text-left">
         {/* Brand */}
         <h1 className="text-xl sm:text-2xl font-semibold text-white tracking-wide">
-          Experience XI
+          Fantasy Cricket Season
         </h1>
 
         {/* Sponsor line */}

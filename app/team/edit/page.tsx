@@ -70,9 +70,9 @@ export default function EditTeamPage() {
   const lockTipRef = useRef<HTMLButtonElement | null>(null);
 
   const [roleFilter, setRoleFilter] = useState("ALL");
-  const [countryFilter, setCountryFilter] = useState("ALL");
+  const [countryFilter, setCountryFilter] = useState<string[]>([]);
   const [pointsFilter, setPointsFilter] = useState("ALL");
-  const [matchFilter, setMatchFilter] = useState("ALL");
+  const [matchFilter, setMatchFilter] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState<"selected" | "available">(
     "selected"
@@ -108,6 +108,23 @@ export default function EditTeamPage() {
     return () => clearTimeout(timeout);
   }, [showLockTip]);
 
+  const toggleMatchFilter = (id: string) => {
+    setMatchFilter(prev => {
+      if (prev.includes(id)) return prev.filter(v => v !== id);
+      return [...prev, id];
+    });
+  };
+
+  const toggleCountryFilter = (country: string) => {
+    setCountryFilter(prev => {
+      if (prev.includes(country)) return prev.filter(v => v !== country);
+      return [...prev, country];
+    });
+  };
+
+  const clearMatchFilter = () => setMatchFilter([]);
+  const clearCountryFilter = () => setCountryFilter([]);
+
   useEffect(() => {
     if (!showLockTip) return;
     const handlePointerDown = (event: PointerEvent) => {
@@ -129,18 +146,19 @@ export default function EditTeamPage() {
   }, []);
 
   const matchFilterTeams = useMemo(() => {
-    if (matchFilter === "ALL") return null;
-    const match = tournament.nextMatches?.find(
-      m => String(m.matchId) === matchFilter
-    );
-    if (!match) return null;
-    return match.teams.map(normalizeTeamName);
+    if (!matchFilter.length) return null;
+    const selected = new Set(matchFilter);
+    const teams =
+      tournament.nextMatches
+        ?.filter(m => selected.has(String(m.matchId)))
+        .flatMap(m => m.teams.map(normalizeTeamName)) ?? [];
+    return teams.length ? teams : null;
   }, [matchFilter, tournament.nextMatches]);
 
   const filteredPlayers = useMemo(() => {
     return players.filter(player => {
       if (roleFilter !== "ALL" && player.role !== roleFilter) return false;
-      if (countryFilter !== "ALL" && player.country !== countryFilter)
+      if (countryFilter.length > 0 && !countryFilter.includes(player.country))
         return false;
       if (matchFilterTeams && !matchFilterTeams.includes(player.country))
         return false;
@@ -496,33 +514,45 @@ export default function EditTeamPage() {
           >
             <h2 className="text-lg font-semibold">Available Players</h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 text-xs">
               <div className="space-y-1">
-                <span className="text-slate-400">Role / Match</span>
-                <div className="flex gap-2">
-                  <select
-                    value={roleFilter}
-                    onChange={event => setRoleFilter(event.target.value)}
-                    className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2"
-                  >
-                    <option value="ALL">All Roles</option>
-                    <option value="WK">WK</option>
-                    <option value="BAT">BAT</option>
-                    <option value="AR">AR</option>
-                    <option value="BOWL">BOWL</option>
-                  </select>
-                  <select
-                    value={matchFilter}
-                    onChange={event => setMatchFilter(event.target.value)}
-                    className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2"
-                  >
-                    <option value="ALL">All Matches</option>
-                    {tournament.nextMatches?.map(match => (
-                      <option key={match.matchId} value={String(match.matchId)}>
-                        M{match.matchId} {teamShort(match.teams[0])} vs {teamShort(match.teams[1])}
-                      </option>
-                    ))}
-                  </select>
+                <span className="text-slate-400">Role</span>
+                <select
+                  value={roleFilter}
+                  onChange={event => setRoleFilter(event.target.value)}
+                  className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2"
+                >
+                  <option value="ALL">All Roles</option>
+                  <option value="WK">WK</option>
+                  <option value="BAT">BAT</option>
+                  <option value="AR">AR</option>
+                  <option value="BOWL">BOWL</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <span className="text-slate-400">Match Filter</span>
+                <div className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 max-h-32 overflow-y-auto space-y-2">
+                  <label className="flex items-center gap-2 text-[11px] text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={matchFilter.length === 0}
+                      onChange={() => clearMatchFilter()}
+                    />
+                    All Matches
+                  </label>
+                  {tournament.nextMatches?.map(match => (
+                    <label
+                      key={match.matchId}
+                      className="flex items-center gap-2 text-[11px] text-slate-200"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={matchFilter.includes(String(match.matchId))}
+                        onChange={() => toggleMatchFilter(String(match.matchId))}
+                      />
+                      M{match.matchId} {teamShort(match.teams[0])} vs {teamShort(match.teams[1])}
+                    </label>
+                  ))}
                 </div>
               </div>
               <label className="space-y-1">
@@ -534,20 +564,32 @@ export default function EditTeamPage() {
                   className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2"
                 />
               </label>
-              <label className="space-y-1">
-                <span className="text-slate-400">Country</span>
-                <select
-                  value={countryFilter}
-                  onChange={event => setCountryFilter(event.target.value)}
-                  className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2"
-                >
-                  {countries.map(country => (
-                    <option key={country} value={country}>
+              <div className="space-y-1">
+                <span className="text-slate-400">Teams</span>
+                <div className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 max-h-32 overflow-y-auto space-y-2">
+                  <label className="flex items-center gap-2 text-[11px] text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={countryFilter.length === 0}
+                      onChange={() => clearCountryFilter()}
+                    />
+                    All Teams
+                  </label>
+                  {countries.filter(c => c !== "ALL").map(country => (
+                    <label
+                      key={country}
+                      className="flex items-center gap-2 text-[11px] text-slate-200"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={countryFilter.includes(country)}
+                        onChange={() => toggleCountryFilter(country)}
+                      />
                       {country}
-                    </option>
+                    </label>
                   ))}
-                </select>
-              </label>
+                </div>
+              </div>
               <label className="space-y-1">
                 <span className="text-slate-400">Points / Star</span>
                 <select
@@ -569,9 +611,9 @@ export default function EditTeamPage() {
               <div className="flex items-end">
                 <button
                   onClick={() => {
-                    setMatchFilter("ALL");
                     setRoleFilter("ALL");
-                    setCountryFilter("ALL");
+                    clearMatchFilter();
+                    clearCountryFilter();
                     setPointsFilter("ALL");
                     setSearchTerm("");
                   }}

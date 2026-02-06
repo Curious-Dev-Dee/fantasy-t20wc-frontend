@@ -297,7 +297,7 @@ export default function EditTeamPage() {
               </div>
               <div className="text-[11px] text-slate-300">
                 {formatLocalTime(tournament.nextMatch?.startTimeUTC ?? null)}
-                {" · "}
+                {" - "}
                 {isLockWindow
                   ? `Locked until ${formatLocalTime(lockEndsAt)}`
                   : mounted
@@ -316,19 +316,26 @@ export default function EditTeamPage() {
 
         <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] text-slate-200 flex flex-wrap items-center gap-2">
           <span>$ {team.totalBudget}/{team.limits.MAX_BUDGET}</span>
-          <span>•</span>
-          <span>👥 {team.teamSize}/{team.limits.MAX_PLAYERS}</span>
-          <span>•</span>
-          <span>★ {team.starCount}/{team.limits.MAX_STAR_PLAYERS}</span>
-          <span>•</span>
+          <span>-</span>
+          <span>P {team.teamSize}/{team.limits.MAX_PLAYERS}</span>
+          <span>-</span>
+          <span>STAR {team.starCount}/{team.limits.MAX_STAR_PLAYERS}</span>
+          <span>-</span>
           <span>
-            WK {team.roleCounts.WK} · BAT {team.roleCounts.BAT} · AR{" "}
-            {team.roleCounts.AR} · BOWL {team.roleCounts.BOWL}
+            WK {team.roleCounts.WK} - BAT {team.roleCounts.BAT} - AR{" "}
+            {team.roleCounts.AR} - BOWL {team.roleCounts.BOWL}
           </span>
         </div>
 
         <div className="text-[11px] text-slate-300">
-          C: {team.workingTeam.captainId ? playerMap.get(team.workingTeam.captainId)?.name : "Not set"} · VC: {team.workingTeam.viceCaptainId ? playerMap.get(team.workingTeam.viceCaptainId)?.name : "Not set"}
+          C:{" "}
+          {team.workingTeam.captainId
+            ? playerMap.get(team.workingTeam.captainId)?.name
+            : "Not set"}{" "}
+          - VC:{" "}
+          {team.workingTeam.viceCaptainId
+            ? playerMap.get(team.workingTeam.viceCaptainId)?.name
+            : "Not set"}
         </div>
 
         <div className="space-y-2">
@@ -465,7 +472,7 @@ export default function EditTeamPage() {
                       disabled={team.isEditLocked}
                       className="h-7 w-7 rounded-full bg-red-600/90 text-white text-sm flex items-center justify-center disabled:opacity-50"
                     >
-                      −
+                      -
                     </button>
                   </div>
                 </div>
@@ -547,12 +554,16 @@ export default function EditTeamPage() {
             </div>
 
             <div className="flex items-center gap-3 text-[11px] text-slate-300">
-              <span>Subs Used: <span className="text-white">{subsUsed}</span></span>
-              <span>•</span>
+              <span>
+                Subs Used: <span className="text-white">{subsUsed}</span>
+              </span>
+              <span>-</span>
               <span>
                 Subs Available:{" "}
                 <span className="text-white">
-                  {team.subsLeftLabel === "Unlimited" ? "∞" : team.subsLeftLabel}
+                  {team.subsLeftLabel === "Unlimited"
+                    ? "Unlimited"
+                    : team.subsLeftLabel}
                 </span>
               </span>
             </div>
@@ -753,7 +764,7 @@ export default function EditTeamPage() {
               </div>
 
               <label className="space-y-1">
-                <span className="text-slate-400">Points / Star</span>
+                <span className="text-slate-400">Credits / Star</span>
                 <select
                   value={pointsFilter}
                   onChange={event => setPointsFilter(event.target.value)}
@@ -761,13 +772,16 @@ export default function EditTeamPage() {
                 >
                   <option value="ALL">All</option>
                   <option value="STAR">Star Players</option>
-                  <option value="11">11</option>
+                  <option value="10.5">10.5</option>
                   <option value="10">10</option>
+                  <option value="9.5">9.5</option>
                   <option value="9">9</option>
+                  <option value="8.5">8.5</option>
                   <option value="8">8</option>
+                  <option value="7.5">7.5</option>
                   <option value="7">7</option>
+                  <option value="6.5">6.5</option>
                   <option value="6">6</option>
-                  <option value="5.5">5.5</option>
                 </select>
               </label>
 

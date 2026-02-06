@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const LOCK_WINDOW_MS = 10 * 60 * 1000;
 
@@ -28,7 +29,7 @@ const getSupabaseClients = () => {
 };
 
 const isWithinLockWindow = async (
-  admin: ReturnType<typeof createClient>
+  admin: SupabaseClient<any, any, any, any, any>
 ) => {
   const { data: rows, error } = await admin.from("fixtures").select("*");
   if (error) throw error;

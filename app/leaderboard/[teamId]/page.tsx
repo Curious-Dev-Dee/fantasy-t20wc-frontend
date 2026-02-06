@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { leaderboardTeams as baseLeaderboardTeams, LeaderboardTeam } from "@/data/leaderboard";
-import { players } from "@/data/players";
+import { players, type Player } from "@/data/players";
 import { fixtures } from "@/data/fixtures";
 import { teamShort } from "@/utils/teamCodes";
 import { useTournament } from "@/hooks/useTournament";
@@ -419,7 +419,7 @@ function GroundRow({
   playerRoleMap,
 }: {
   title: string;
-  players: Array<(typeof players)[number] | undefined>;
+  players: Array<Player | undefined>;
   team: LeaderboardTeam;
   statsMap: Map<string, any>;
   playerRoleMap: Map<string, string>;

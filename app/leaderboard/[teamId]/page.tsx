@@ -87,7 +87,10 @@ export default function LeaderboardTeamPage() {
   const { stats } = useMatchStats();
 
   const playerRoleMap = useMemo(
-    () => new Map(players.map(player => [player.id, player.role] as const)),
+    () =>
+      new Map<string, PlayerRole>(
+        players.map(player => [player.id, player.role] as [string, PlayerRole])
+      ),
     []
   );
 
@@ -285,7 +288,7 @@ export default function LeaderboardTeamPage() {
           </div>
           {roster.map(player => {
             const playerId = player!.id;
-            const role: PlayerRole = playerRoleMap.get(playerId) || "BAT";
+            const role = (playerRoleMap.get(playerId) ?? "BAT") as PlayerRole;
             const allMatches = statsMap.get(playerId) || [];
             const matches = showAllMatches
               ? allMatches
@@ -436,7 +439,7 @@ function GroundRow({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {validPlayers.map(player => {
           const id = player!.id;
-          const role: PlayerRole = playerRoleMap.get(id) || player!.role;
+          const role = (playerRoleMap.get(id) ?? player!.role) as PlayerRole;
           const matches = (statsMap as any).get(id) || [];
           const isCaptain = team.captainId === id;
           const isVice = team.viceCaptainId === id;

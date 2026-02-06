@@ -79,6 +79,9 @@ export default function EditTeamPage() {
   );
   const [showMatchPicker, setShowMatchPicker] = useState(false);
   const [showTeamPicker, setShowTeamPicker] = useState(false);
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
+  const [showPlayerSheet, setShowPlayerSheet] = useState(false);
+  const [activePlayerId, setActivePlayerId] = useState<string | null>(null);
 
   useEffect(() => {
     setSavedSnapshot(loadSnapshot(user?.id));
@@ -277,80 +280,46 @@ export default function EditTeamPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0B0F1A] text-white px-4 sm:px-6 py-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-start justify-between gap-4">
+    <div className="min-h-screen bg-[#0B0F1A] text-white px-4 sm:px-6 py-4 pb-24">
+      <div className="max-w-6xl mx-auto space-y-4">
+        <div className="sticky top-0 z-20 rounded-2xl border border-white/10 bg-[#0F1626]/90 backdrop-blur px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">
-                Edit Team
-              </h1>
-              <p className="text-[11px] text-indigo-300 mt-1">
-                Next Match: {nextMatchLabel} ·{" "}
-                {formatLocalTime(tournament.nextMatch?.startTimeUTC ?? null)} ·{" "}
+              <div className="text-sm font-semibold text-white">
+                {nextMatchLabel}
+              </div>
+              <div className="text-[11px] text-slate-300">
+                {formatLocalTime(tournament.nextMatch?.startTimeUTC ?? null)}
+                {" · "}
                 {isLockWindow
                   ? `Locked until ${formatLocalTime(lockEndsAt)}`
                   : mounted
                   ? `Lock in ${countdown}`
                   : "Lock in --:--:--"}
-              </p>
+              </div>
             </div>
-            <div className="flex gap-2 text-[11px]">
-              <Link
-                href="/"
-                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-indigo-100 hover:border-white/30"
-              >
-                Home
-              </Link>
-              <Link
-                href="/team"
-                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-indigo-100 hover:border-white/30"
-              >
-                View Team
-              </Link>
-            </div>
+            <Link
+              href="/team"
+              className="rounded-full bg-indigo-500/80 px-3 py-1 text-[11px] text-white"
+            >
+              Preview Team
+            </Link>
           </div>
-
-          {lockBadgeLabel && (
-            <span className="inline-flex items-center gap-2 text-[11px] px-2.5 py-1 rounded-full bg-red-500/25 text-red-100 border border-red-400/50 shadow-[0_0_10px_rgba(248,113,113,0.15)] w-fit">
-              {lockBadgeLabel}
-              <button
-                type="button"
-                onClick={() => setShowLockTip(prev => !prev)}
-                ref={lockTipRef}
-                className="relative group text-red-100"
-              >
-                i
-                <span
-                  className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 w-60 rounded-lg border border-white/10 bg-[#0F1626] px-3 py-2 text-[10px] text-slate-200 opacity-0 pointer-events-none transition group-hover:opacity-100 ${
-                    showLockTip ? "opacity-100" : ""
-                  }`}
-                >
-                  Edits are paused for 10 minutes from match start.
-                </span>
-              </button>
-            </span>
-          )}
         </div>
 
-        <div className="flex items-center gap-2 text-[10px] text-slate-200 overflow-x-auto">
-          <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 whitespace-nowrap">
-            $ {team.totalBudget}/{team.limits.MAX_BUDGET}
-          </span>
-          <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 whitespace-nowrap">
-            ★ {team.starCount}/{team.limits.MAX_STAR_PLAYERS}
-          </span>
-          <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 whitespace-nowrap">
-            {team.subsLeftLabel === "Unlimited" ? "∞" : team.subsLeftLabel}
-          </span>
-          <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 whitespace-nowrap">
+        <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] text-slate-200 flex flex-wrap items-center gap-2">
+          <span>$ {team.totalBudget}/{team.limits.MAX_BUDGET}</span>
+          <span>•</span>
+          <span>{team.teamSize}/{team.limits.MAX_PLAYERS} players</span>
+          <span>•</span>
+          <span>
             WK {team.roleCounts.WK} · BAT {team.roleCounts.BAT} · AR{" "}
             {team.roleCounts.AR} · BOWL {team.roleCounts.BOWL}
           </span>
         </div>
 
         <div className="text-[11px] text-slate-300">
-          Captain: {team.workingTeam.captainId ? playerMap.get(team.workingTeam.captainId)?.name : "Not set"} | Vice Captain: {team.workingTeam.viceCaptainId ? playerMap.get(team.workingTeam.viceCaptainId)?.name : "Not set"}
+          C: {team.workingTeam.captainId ? playerMap.get(team.workingTeam.captainId)?.name : "Not set"} · VC: {team.workingTeam.viceCaptainId ? playerMap.get(team.workingTeam.viceCaptainId)?.name : "Not set"}
         </div>
 
         <div className="space-y-2">
@@ -378,46 +347,47 @@ export default function EditTeamPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="flex items-center gap-2 lg:hidden">
-            <button
-              onClick={() => setActiveTab("selected")}
-              className={`px-3 py-1 rounded-full text-[11px] ${
-                activeTab === "selected"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-white/10 text-slate-300"
-              }`}
-            >
-              Selected
-            </button>
-            <button
-              onClick={() => setActiveTab("available")}
-              className={`px-3 py-1 rounded-full text-[11px] ${
-                activeTab === "available"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-white/10 text-slate-300"
-              }`}
-            >
-              Available
-            </button>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex rounded-full bg-white/5 border border-white/10 p-1 text-[11px]">
+              <button
+                onClick={() => setActiveTab("selected")}
+                className={`px-3 py-1 rounded-full ${
+                  activeTab === "selected"
+                    ? "bg-indigo-600 text-white"
+                    : "text-slate-300"
+                }`}
+              >
+                Selected
+              </button>
+              <button
+                onClick={() => setActiveTab("available")}
+                className={`px-3 py-1 rounded-full ${
+                  activeTab === "available"
+                    ? "bg-indigo-600 text-white"
+                    : "text-slate-300"
+                }`}
+              >
+                Available
+              </button>
+            </div>
+            {activeTab === "available" && (
+              <button
+                onClick={() => setShowFilterSheet(true)}
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-slate-200"
+              >
+                Filter
+              </button>
+            )}
           </div>
 
           <div
             key={`selected-${team.workingTeam.players.join(",")}`}
             className={`space-y-3 ${
               activeTab === "selected" ? "block" : "hidden"
-            } lg:block`}
+            }`}
           >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">My Team</h2>
-              <button
-                onClick={handleSave}
-                disabled={team.isEditLocked}
-                className="px-4 py-2 bg-blue-600 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
-              >
-                {team.isEditLocked ? "Locked" : "Save Team"}
-              </button>
-            </div>
+            <h2 className="text-lg font-semibold">My Team</h2>
 
             {team.selectedPlayers.length === 0 && (
               <div className="text-sm text-slate-400 border border-white/10 rounded-xl p-4">
@@ -432,9 +402,13 @@ export default function EditTeamPage() {
               return (
                 <div
                   key={player!.id}
-                  className={`border border-white/10 rounded-xl p-4 flex justify-between items-start gap-4 transition-all duration-200 ${
+                  className={`border border-white/10 rounded-xl p-4 flex justify-between items-start gap-4 transition-all duration-200 cursor-pointer ${
                     recentId === player!.id ? "ring-2 ring-indigo-400/70" : ""
                   }`}
+                  onClick={() => {
+                    setActivePlayerId(player!.id);
+                    setShowPlayerSheet(true);
+                  }}
                 >
                   <div className="flex gap-3">
                     <div className="h-11 w-11 rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
@@ -458,223 +432,23 @@ export default function EditTeamPage() {
                       </div>
                     </div>
 
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={() => team.setCaptain(player!.id)}
-                        disabled={team.isEditLocked}
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          isCaptain
-                            ? "bg-indigo-600"
-                            : "bg-slate-700 hover:bg-slate-600"
-                        } disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale`}
-                      >
-                        C
-                      </button>
-                      <button
-                        onClick={() => team.setViceCaptain(player!.id)}
-                        disabled={team.isEditLocked}
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          isViceCaptain
-                            ? "bg-purple-600"
-                            : "bg-slate-700 hover:bg-slate-600"
-                        } disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale`}
-                      >
-                        VC
-                      </button>
+                    <div className="flex gap-2 mt-2 text-[10px] text-slate-300">
+                      {isCaptain && <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-white">C</span>}
+                      {isViceCaptain && <span className="rounded-full bg-purple-600 px-2 py-0.5 text-white">VC</span>}
                     </div>
                   </div>
-
-                  <button
-                    onClick={() => {
-                      team.removePlayer(player!.id);
-                      highlight(player!.id);
-                    }}
-                    disabled={team.isEditLocked}
-                    className="h-9 w-9 rounded-full bg-red-600 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale flex items-center justify-center"
-                  >
-                    −
-                  </button>
                 </div>
               );
             })}
-
-            <div className="flex justify-end">
-              <button
-                onClick={handleSave}
-                disabled={team.isEditLocked}
-                className="px-4 py-2 bg-blue-600 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
-              >
-                {team.isEditLocked ? "Locked" : "Save Team"}
-              </button>
-            </div>
           </div>
 
           <div
             key={`available-${team.workingTeam.players.join(",")}`}
             className={`space-y-3 ${
               activeTab === "available" ? "block" : "hidden"
-            } lg:block`}
+            }`}
           >
             <h2 className="text-lg font-semibold">Available Players</h2>
-
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 text-xs">
-              <div className="space-y-1">
-                <span className="text-slate-400">Role</span>
-                <select
-                  value={roleFilter}
-                  onChange={event => setRoleFilter(event.target.value)}
-                  className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2"
-                >
-                  <option value="ALL">All Roles</option>
-                  <option value="WK">WK</option>
-                  <option value="BAT">BAT</option>
-                  <option value="AR">AR</option>
-                  <option value="BOWL">BOWL</option>
-                </select>
-              </div>
-              <div className="space-y-1 relative">
-                <span className="text-slate-400">Match Filter</span>
-                <button
-                  type="button"
-                  onClick={() => setShowMatchPicker(prev => !prev)}
-                  className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-left text-slate-200"
-                >
-                  {matchFilter.length === 0
-                    ? "All Matches"
-                    : `${matchFilter.length} selected`}
-                </button>
-                {showMatchPicker && (
-                  <div className="absolute z-20 mt-2 w-full rounded-lg border border-white/10 bg-[#0F1626] p-3 shadow-xl">
-                    <div className="flex items-center justify-between mb-2 text-xs text-slate-300">
-                      <span>Select matches</span>
-                      <button
-                        type="button"
-                        onClick={() => setShowMatchPicker(false)}
-                        className="text-indigo-300 hover:underline"
-                      >
-                        Done
-                      </button>
-                    </div>
-                    <label className="flex items-center gap-2 text-[11px] text-slate-200 mb-2">
-                      <input
-                        type="checkbox"
-                        checked={matchFilter.length === 0}
-                        onChange={() => clearMatchFilter()}
-                      />
-                      All Matches
-                    </label>
-                    <div className="max-h-40 overflow-y-auto space-y-2">
-                      {tournament.nextMatches?.map(match => (
-                        <label
-                          key={match.matchId}
-                          className="flex items-center gap-2 text-[11px] text-slate-200"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={matchFilter.includes(String(match.matchId))}
-                            onChange={() => toggleMatchFilter(String(match.matchId))}
-                          />
-                          M{match.matchId} {teamShort(match.teams[0])} vs{" "}
-                          {teamShort(match.teams[1])}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <label className="space-y-1">
-                <span className="text-slate-400">Search</span>
-                <input
-                  value={searchTerm}
-                  onChange={event => setSearchTerm(event.target.value)}
-                  placeholder="Player name"
-                  className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2"
-                />
-              </label>
-              <div className="space-y-1 relative">
-                <span className="text-slate-400">Teams</span>
-                <button
-                  type="button"
-                  onClick={() => setShowTeamPicker(prev => !prev)}
-                  className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-left text-slate-200"
-                >
-                  {countryFilter.length === 0
-                    ? "All Teams"
-                    : `${countryFilter.length} selected`}
-                </button>
-                {showTeamPicker && (
-                  <div className="absolute z-20 mt-2 w-full rounded-lg border border-white/10 bg-[#0F1626] p-3 shadow-xl">
-                    <div className="flex items-center justify-between mb-2 text-xs text-slate-300">
-                      <span>Select teams</span>
-                      <button
-                        type="button"
-                        onClick={() => setShowTeamPicker(false)}
-                        className="text-indigo-300 hover:underline"
-                      >
-                        Done
-                      </button>
-                    </div>
-                    <label className="flex items-center gap-2 text-[11px] text-slate-200 mb-2">
-                      <input
-                        type="checkbox"
-                        checked={countryFilter.length === 0}
-                        onChange={() => clearCountryFilter()}
-                      />
-                      All Teams
-                    </label>
-                    <div className="max-h-40 overflow-y-auto space-y-2">
-                      {countries
-                        .filter(c => c !== "ALL")
-                        .map(country => (
-                          <label
-                            key={country}
-                            className="flex items-center gap-2 text-[11px] text-slate-200"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={countryFilter.includes(country)}
-                              onChange={() => toggleCountryFilter(country)}
-                            />
-                            {country}
-                          </label>
-                        ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <label className="space-y-1">
-                <span className="text-slate-400">Points / Star</span>
-                <select
-                  value={pointsFilter}
-                  onChange={event => setPointsFilter(event.target.value)}
-                  className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2"
-                >
-                  <option value="ALL">All</option>
-                  <option value="STAR">Star Players</option>
-                  <option value="11">11</option>
-                  <option value="10">10</option>
-                  <option value="9">9</option>
-                  <option value="8">8</option>
-                  <option value="7">7</option>
-                  <option value="6">6</option>
-                  <option value="5.5">5.5</option>
-                </select>
-              </label>
-              <div className="flex items-end">
-                <button
-                  onClick={() => {
-                    setRoleFilter("ALL");
-                    clearMatchFilter();
-                    clearCountryFilter();
-                    setPointsFilter("ALL");
-                    setSearchTerm("");
-                  }}
-                  className="w-full rounded-lg border border-white/10 px-3 py-2 text-slate-200 hover:border-white/30"
-                >
-                  Clear Filters
-                </button>
-              </div>
-            </div>
 
             <div className="text-xs text-slate-400">
               Showing {filteredPlayers.length} players
@@ -687,9 +461,13 @@ export default function EditTeamPage() {
               return (
                 <div
                   key={player.id}
-                  className={`border border-white/10 rounded-xl p-4 flex justify-between items-start gap-4 transition-all duration-200 ${
+                  className={`border border-white/10 rounded-xl p-4 flex justify-between items-start gap-4 transition-all duration-200 cursor-pointer ${
                     recentId === player.id ? "ring-2 ring-emerald-400/70" : ""
                   }`}
+                  onClick={() => {
+                    setActivePlayerId(player.id);
+                    setShowPlayerSheet(true);
+                  }}
                 >
                   <div className="flex gap-3">
                     <div className="h-11 w-11 rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
@@ -713,23 +491,6 @@ export default function EditTeamPage() {
                       </div>
                     </div>
                   </div>
-
-                  <button
-                    onClick={() => {
-                      team.addPlayer(player.id);
-                      highlight(player.id);
-                    }}
-                    disabled={!canAdd || selected || team.isEditLocked}
-                    className={`h-9 w-9 rounded-full text-sm font-semibold flex items-center justify-center ${
-                      selected
-                        ? "bg-slate-700 cursor-not-allowed"
-                        : canAdd
-                        ? "bg-green-600"
-                        : "bg-slate-700 cursor-not-allowed"
-                    } disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale`}
-                  >
-                    +
-                  </button>
                 </div>
               );
             })}
@@ -824,6 +585,208 @@ export default function EditTeamPage() {
           </div>
         </div>
       )}
+
+      {showFilterSheet && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-end">
+          <div className="w-full rounded-t-2xl bg-[#0F1626] border border-white/10 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-semibold">Filters</div>
+              <button
+                onClick={() => setShowFilterSheet(false)}
+                className="text-xs text-indigo-300"
+              >
+                Done
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 text-xs">
+              <label className="space-y-1">
+                <span className="text-slate-400">Role</span>
+                <select
+                  value={roleFilter}
+                  onChange={event => setRoleFilter(event.target.value)}
+                  className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2"
+                >
+                  <option value="ALL">All Roles</option>
+                  <option value="WK">WK</option>
+                  <option value="BAT">BAT</option>
+                  <option value="AR">AR</option>
+                  <option value="BOWL">BOWL</option>
+                </select>
+              </label>
+
+              <div className="space-y-1">
+                <span className="text-slate-400">Match Filter</span>
+                <div className="space-y-2 max-h-36 overflow-y-auto">
+                  <label className="flex items-center gap-2 text-[11px] text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={matchFilter.length === 0}
+                      onChange={() => clearMatchFilter()}
+                    />
+                    All Matches
+                  </label>
+                  {tournament.nextMatches?.map(match => (
+                    <label
+                      key={match.matchId}
+                      className="flex items-center gap-2 text-[11px] text-slate-200"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={matchFilter.includes(String(match.matchId))}
+                        onChange={() => toggleMatchFilter(String(match.matchId))}
+                      />
+                      M{match.matchId} {teamShort(match.teams[0])} vs{" "}
+                      {teamShort(match.teams[1])}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <label className="space-y-1">
+                <span className="text-slate-400">Search</span>
+                <input
+                  value={searchTerm}
+                  onChange={event => setSearchTerm(event.target.value)}
+                  placeholder="Player name"
+                  className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2"
+                />
+              </label>
+
+              <div className="space-y-1">
+                <span className="text-slate-400">Teams</span>
+                <div className="space-y-2 max-h-36 overflow-y-auto">
+                  <label className="flex items-center gap-2 text-[11px] text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={countryFilter.length === 0}
+                      onChange={() => clearCountryFilter()}
+                    />
+                    All Teams
+                  </label>
+                  {countries
+                    .filter(c => c !== "ALL")
+                    .map(country => (
+                      <label
+                        key={country}
+                        className="flex items-center gap-2 text-[11px] text-slate-200"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={countryFilter.includes(country)}
+                          onChange={() => toggleCountryFilter(country)}
+                        />
+                        {country}
+                      </label>
+                    ))}
+                </div>
+              </div>
+
+              <label className="space-y-1">
+                <span className="text-slate-400">Points / Star</span>
+                <select
+                  value={pointsFilter}
+                  onChange={event => setPointsFilter(event.target.value)}
+                  className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2"
+                >
+                  <option value="ALL">All</option>
+                  <option value="STAR">Star Players</option>
+                  <option value="11">11</option>
+                  <option value="10">10</option>
+                  <option value="9">9</option>
+                  <option value="8">8</option>
+                  <option value="7">7</option>
+                  <option value="6">6</option>
+                  <option value="5.5">5.5</option>
+                </select>
+              </label>
+
+              <button
+                onClick={() => {
+                  setRoleFilter("ALL");
+                  clearMatchFilter();
+                  clearCountryFilter();
+                  setPointsFilter("ALL");
+                  setSearchTerm("");
+                }}
+                className="w-full rounded-lg border border-white/10 px-3 py-2 text-slate-200"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPlayerSheet && activePlayerId && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-end">
+          <div className="w-full rounded-t-2xl bg-[#0F1626] border border-white/10 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-semibold">
+                {playerMap.get(activePlayerId)?.name ?? "Player"}
+              </div>
+              <button
+                onClick={() => setShowPlayerSheet(false)}
+                className="text-xs text-indigo-300"
+              >
+                Done
+              </button>
+            </div>
+            {team.workingTeam.players.includes(activePlayerId) ? (
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    team.setCaptain(activePlayerId);
+                    setShowPlayerSheet(false);
+                  }}
+                  className="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm"
+                >
+                  Set as Captain
+                </button>
+                <button
+                  onClick={() => {
+                    team.setViceCaptain(activePlayerId);
+                    setShowPlayerSheet(false);
+                  }}
+                  className="w-full rounded-lg bg-purple-600 px-3 py-2 text-sm"
+                >
+                  Set as Vice Captain
+                </button>
+                <button
+                  onClick={() => {
+                    team.removePlayer(activePlayerId);
+                    setShowPlayerSheet(false);
+                  }}
+                  className="w-full rounded-lg bg-red-600 px-3 py-2 text-sm"
+                >
+                  Remove Player
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  team.addPlayer(activePlayerId);
+                  setShowPlayerSheet(false);
+                }}
+                disabled={!team.canAddPlayer(activePlayerId)}
+                className="w-full rounded-lg bg-green-600 px-3 py-2 text-sm disabled:opacity-50"
+              >
+                Add Player
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0F1A]/90 backdrop-blur border-t border-white/10 px-4 py-3">
+        <button
+          onClick={handleSave}
+          disabled={team.isEditLocked || !team.isValidTeam}
+          className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {team.isEditLocked ? "Locked" : "Save Team"}
+        </button>
+      </div>
 
       {showAutoLockToast && (
         <div className="fixed top-4 right-4 rounded-lg border border-white/10 bg-[#0F1626] px-4 py-2 text-xs text-white shadow">

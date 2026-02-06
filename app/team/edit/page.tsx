@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { players } from "@/data/players";
 import { useTeam } from "@/hooks/useTeam";
 import { useTournament } from "@/hooks/useTournament";
@@ -67,7 +68,9 @@ export default function EditTeamPage() {
   const [now, setNow] = useState(() => Date.now());
   const [showLockTip, setShowLockTip] = useState(false);
   const [showAutoLockToast, setShowAutoLockToast] = useState(false);
+  const [showSaveToast, setShowSaveToast] = useState(false);
   const lockTipRef = useRef<HTMLButtonElement | null>(null);
+  const router = useRouter();
 
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [countryFilter, setCountryFilter] = useState<string[]>([]);
@@ -252,7 +255,11 @@ export default function EditTeamPage() {
       viceCaptainId: team.workingTeam.viceCaptainId,
     });
     setShowPreview(false);
-    alert("Team saved.");
+    setShowSaveToast(true);
+    setTimeout(() => {
+      setShowSaveToast(false);
+      router.push("/team");
+    }, 1200);
   };
 
   const nextMatchLabel = tournament.nextMatch
@@ -854,6 +861,12 @@ export default function EditTeamPage() {
       {showAutoLockToast && (
         <div className="fixed top-4 right-4 rounded-lg border border-white/10 bg-[#0F1626] px-4 py-2 text-xs text-white shadow">
           Team locked automatically.
+        </div>
+      )}
+
+      {showSaveToast && (
+        <div className="fixed top-4 right-4 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-4 py-2 text-xs text-emerald-100 shadow">
+          Team saved successfully
         </div>
       )}
     </div>

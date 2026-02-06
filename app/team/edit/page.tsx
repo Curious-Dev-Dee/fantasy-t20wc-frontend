@@ -444,9 +444,18 @@ export default function EditTeamPage() {
                         VC
                       </span>
                     )}
-                    <span className="h-7 w-7 rounded-full bg-red-600/90 text-white text-sm flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={event => {
+                        event.stopPropagation();
+                        team.removePlayer(player!.id);
+                        highlight(player!.id);
+                      }}
+                      disabled={team.isEditLocked}
+                      className="h-7 w-7 rounded-full bg-red-600/90 text-white text-sm flex items-center justify-center disabled:opacity-50"
+                    >
                       −
-                    </span>
+                    </button>
                   </div>
                 </div>
               );
@@ -475,10 +484,6 @@ export default function EditTeamPage() {
                   className={`border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between gap-3 transition-all duration-200 cursor-pointer ${
                     recentId === player.id ? "ring-2 ring-emerald-400/70" : ""
                   }`}
-                  onClick={() => {
-                    setActivePlayerId(player.id);
-                    setShowPlayerSheet(true);
-                  }}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-11 w-11 rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
@@ -503,9 +508,18 @@ export default function EditTeamPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="h-7 w-7 rounded-full bg-green-600/90 text-white text-sm flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={event => {
+                        event.stopPropagation();
+                        team.addPlayer(player.id);
+                        highlight(player.id);
+                      }}
+                      disabled={!canAdd || selected || team.isEditLocked}
+                      className="h-7 w-7 rounded-full bg-green-600/90 text-white text-sm flex items-center justify-center disabled:opacity-50"
+                    >
                       +
-                    </span>
+                    </button>
                   </div>
                 </div>
               );

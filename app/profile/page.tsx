@@ -10,10 +10,12 @@ export default function ProfilePage() {
   const [fullName, setFullName] = useState("");
   const [teamName, setTeamName] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   useEffect(() => {
     setFullName(profile.full_name || "");
     setTeamName(profile.team_name || "");
+    setPhotoPreview(profile.team_photo_url || null);
   }, [profile.full_name, profile.team_name]);
 
   const canEditName = !profile.full_name_edit_used;
@@ -48,6 +50,7 @@ export default function ProfilePage() {
       team_name: nextTeamName,
       full_name_edit_used: Boolean(profile.full_name_edit_used) || fullNameChanged,
       team_name_edit_used: Boolean(profile.team_name_edit_used) || teamNameChanged,
+      team_photo_url: photoPreview,
     });
 
     setMessage("Profile updated.");
@@ -62,6 +65,20 @@ export default function ProfilePage() {
       </div>
     );
   }
+
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      setPhotoPreview(profile.team_photo_url || null);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result?.toString() || null;
+      setPhotoPreview(result);
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div className="min-h-screen bg-[#0B0F1A] text-white px-4 sm:px-6 py-8">
@@ -130,6 +147,26 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+
+          <label className="block text-xs text-slate-300">
+            Team Photo (optional)
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoChange}
+              className="mt-1 w-full text-xs text-slate-300"
+            />
+            <span className="mt-1 block text-[10px] text-slate-400">
+              You can change this anytime.
+            </span>
+          </label>
+          {photoPreview && (
+            <img
+              src={photoPreview}
+              alt="Team preview"
+              className="h-16 w-16 rounded-full border border-white/10 object-cover"
+            />
+          )}
 
           <button
             onClick={handleSave}

@@ -20,7 +20,6 @@ export default function LoginPage() {
   const [country, setCountry] = useState("");
   const [stateName, setStateName] = useState("");
   const [favoriteTeam, setFavoriteTeam] = useState("");
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const teamOptions = useMemo(() => {
     const unique = new Set<string>();
@@ -102,22 +101,6 @@ export default function LoginPage() {
       }
     }
     setLoading(false);
-  };
-
-  const handlePhotoChange = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      setPhotoPreview(null);
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result?.toString() || null;
-      setPhotoPreview(result);
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleForgotPassword = async () => {
@@ -287,25 +270,6 @@ export default function LoginPage() {
                     ))}
                   </select>
                 </label>
-                <label className="block text-xs text-slate-300">
-                  Team Photo (optional)
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoChange}
-                    className="mt-1 w-full text-xs text-slate-300"
-                  />
-                  <span className="mt-1 block text-[10px] text-slate-400">
-                    Upload later if sign-in has issues (large images can fail).
-                  </span>
-                </label>
-                {photoPreview && (
-                  <img
-                    src={photoPreview}
-                    alt="Team preview"
-                    className="h-16 w-16 rounded-full border border-white/10 object-cover"
-                  />
-                )}
               </div>
             )}
 

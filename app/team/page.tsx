@@ -125,7 +125,7 @@ export default function TeamPage() {
                     </div>
                   </div>
 
-                  <div className="absolute inset-0 flex flex-col justify-between px-[6%] pt-[14%] pb-[6%]">
+                  <div className="absolute inset-0 pointer-events-none flex flex-col justify-between px-[6%] pt-[14%] pb-[6%]">
                     <GroundRow
                       title="Wicket Keepers"
                       players={team.selectedPlayers.filter(p => p?.role === "WK")}

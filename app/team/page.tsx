@@ -76,11 +76,11 @@ export default function TeamPage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-[#0B0F1A] text-white px-4 sm:px-6 py-8">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[#0B0F1A] text-white px-4 sm:px-6 py-4">
+      <div className="max-w-6xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold">{teamName}</h1>
-          <div className="flex gap-4 text-[11px]">
+          <h1 className="text-base sm:text-lg font-semibold">{teamName}</h1>
+          <div className="flex gap-3 text-[11px]">
             <Link href="/" className="text-indigo-300 hover:underline">
               Home
             </Link>
@@ -105,7 +105,7 @@ export default function TeamPage() {
           )}
 
           {team.selectedPlayers.length > 0 && (
-            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.35),rgba(15,23,42,0.9))] p-6 sm:p-8">
+            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.35),rgba(15,23,42,0.9))] p-4 sm:p-6">
               <div className="absolute inset-0 opacity-30">
                 <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(16,185,129,0.12)_0,rgba(16,185,129,0.12)_18px,rgba(16,185,129,0.22)_18px,rgba(16,185,129,0.22)_36px)]" />
                 <div className="absolute left-1/2 top-6 h-[70%] w-[70%] -translate-x-1/2 rounded-full border border-white/10" />
@@ -113,7 +113,7 @@ export default function TeamPage() {
                 <div className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10" />
               </div>
               <div className="relative">
-                <div className="flex items-center justify-between text-[11px] text-slate-200 mb-4">
+                <div className="flex items-center justify-between text-[10px] text-slate-200 mb-2">
                   <span>Players {team.teamSize} / 11</span>
                   <span>
                     Credits Left{" "}
@@ -196,11 +196,11 @@ function GroundRow({
   if (validPlayers.length === 0) return null;
 
   return (
-    <div className="mb-6">
-      <div className="text-[10px] uppercase tracking-[0.35em] text-emerald-200/70 mb-3 text-center">
+    <div className="mb-4">
+      <div className="text-[9px] uppercase tracking-[0.35em] text-emerald-200/70 mb-2 text-center">
         {title}
       </div>
-      <div className="flex flex-wrap justify-center gap-4">
+      <div className="flex flex-wrap justify-center gap-3">
         {validPlayers.map(player => {
           const id = player!.id;
           const role: PlayerRole = playerRoleMap.get(id) || player!.role;
@@ -217,9 +217,9 @@ function GroundRow({
           const total =
             Math.round(breakdown.basePoints * multiplier) + breakdown.motmBonus;
           return (
-            <div key={id} className="flex flex-col items-center gap-1.5">
+            <div key={id} className="flex flex-col items-center gap-1">
               <div className="relative">
-                <div className="h-12 w-12 rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+                <div className="h-10 w-10 rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shadow-[0_0_12px_rgba(16,185,129,0.2)]">
                   <img
                     src="/player-silhouette.svg"
                     alt={player!.name}
@@ -227,23 +227,23 @@ function GroundRow({
                   />
                 </div>
                 {isCaptain && (
-                  <span className="absolute -top-1 -right-2 h-5 min-w-[20px] rounded-full border border-emerald-400/70 bg-emerald-500/20 text-[9px] font-semibold text-emerald-100 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-2 h-4 min-w-[18px] rounded-full border border-emerald-400/70 bg-emerald-500/20 text-[8px] font-semibold text-emerald-100 flex items-center justify-center">
                     C
                   </span>
                 )}
                 {isVice && !isCaptain && (
-                  <span className="absolute -top-1 -right-2 h-5 min-w-[20px] rounded-full border border-indigo-400/70 bg-indigo-500/20 text-[9px] font-semibold text-indigo-100 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-2 h-4 min-w-[18px] rounded-full border border-indigo-400/70 bg-indigo-500/20 text-[8px] font-semibold text-indigo-100 flex items-center justify-center">
                     VC
                   </span>
                 )}
               </div>
-              <div className="text-[11px] font-medium text-white text-center max-w-[92px] truncate">
+              <div className="text-[10px] font-medium text-white text-center max-w-[84px] truncate">
                 {player!.name}
               </div>
-              <div className="rounded-full bg-white/10 border border-white/15 px-3 py-0.5 text-[10px] text-slate-200">
+              <div className="rounded-full bg-white/10 border border-white/15 px-2 py-0.5 text-[9px] text-slate-200">
                 {player!.credit} cr
               </div>
-              <div className="text-[10px] text-slate-300">{total} pts</div>
+              <div className="text-[9px] text-slate-300">{total} pts</div>
             </div>
           );
         })}

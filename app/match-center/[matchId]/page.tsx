@@ -53,6 +53,10 @@ export default function MatchCenterPage() {
     () => new Map(players.map(player => [player.id, player])),
     []
   );
+  const playerRoleMap = useMemo(
+    () => new Map(players.map(player => [player.id, player.role] as const)),
+    []
+  );
 
   const teamTotals = useMemo(() => {
     if (!fixture) {
@@ -183,7 +187,7 @@ export default function MatchCenterPage() {
       const statsMap = new Map(stats.map(stat => [stat.playerId, stat.matches]));
       totalPoints = scoreLockedMatch({
         locked,
-        playerRoleMap: playerMap,
+        playerRoleMap,
         statsMap,
       });
     }

@@ -7,8 +7,13 @@ import { useTournament } from "@/hooks/useTournament";
 import { useAuth } from "@/hooks/useAuth";
 import { scopedKey } from "@/utils/storage";
 import { teamShort } from "@/utils/teamCodes";
-import { players } from "@/data/players";
-import { scoreTeam, scoreLockedTeams, scorePlayerBreakdown } from "@/utils/scoring";
+import { players, type Player } from "@/data/players";
+import {
+  scoreTeam,
+  scoreLockedTeams,
+  scorePlayerBreakdown,
+  type PlayerRole,
+} from "@/utils/scoring";
 import { useMatchStats } from "@/hooks/useMatchStats";
 import { useTeamName } from "@/hooks/useTeamName";
 
@@ -24,7 +29,7 @@ export default function TeamPage() {
   const lockTipRef = useRef<HTMLButtonElement | null>(null);
 
   const playerRoleMap = useRef(
-    new Map(players.map(player => [player.id, player.role]))
+    new Map(players.map(player => [player.id, player.role] as const))
   );
   const statsMap = useRef(new Map<string, typeof stats[number]["matches"]>());
 
@@ -245,10 +250,10 @@ function GroundRow({
   playerRoleMap,
 }: {
   title: string;
-  players: Array<(typeof players)[number] | undefined>;
+  players: Array<Player | undefined>;
   team: ReturnType<typeof useTeam>;
   statsMap: Map<string, any>;
-  playerRoleMap: Map<string, any>;
+  playerRoleMap: Map<string, PlayerRole>;
 }) {
   const validPlayers = players.filter(Boolean);
   if (validPlayers.length === 0) return null;
@@ -261,7 +266,7 @@ function GroundRow({
       <div className="flex flex-wrap justify-center gap-4">
         {validPlayers.map(player => {
           const id = player!.id;
-          const role = playerRoleMap.get(id) || player!.role;
+          const role: PlayerRole = playerRoleMap.get(id) || player!.role;
           const matches = (statsMap as any).get(id) || [];
           const isCaptain = team.workingTeam.captainId === id;
           const isVice = team.workingTeam.viceCaptainId === id;

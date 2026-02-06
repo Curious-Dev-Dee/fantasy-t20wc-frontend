@@ -27,8 +27,8 @@ function loadSnapshot(userId?: string | null): TeamSnapshot {
   if (!parsed) return EMPTY_SNAPSHOT;
   return {
     players: Array.isArray(parsed.players) ? parsed.players : [],
-    captainId: parsed.captainId - null,
-    viceCaptainId: parsed.viceCaptainId - null,
+    captainId: parsed.captainId ?? null,
+    viceCaptainId: parsed.viceCaptainId ?? null,
   };
 }
 
@@ -755,7 +755,7 @@ function SummaryCard({
     <div
       className={`rounded-xl border border-white/10 bg-white/5 ${
         compact ? "px-3 py-2" : "px-4 py-3"
-      } ${className - ""}`}
+      } ${className ?? ""}`}
     >
       <div className="text-[11px] text-slate-400">{label}</div>
       <div

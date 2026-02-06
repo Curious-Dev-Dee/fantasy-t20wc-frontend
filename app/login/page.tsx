@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase, isSupabaseConfigured } from "@/utils/supabaseClient";
 import { useAuth } from "@/hooks/useAuth";
 import { fixtures } from "@/data/fixtures";
+import { players } from "@/data/players";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,8 +27,194 @@ export default function LoginPage() {
     fixtures.forEach(match => {
       match.teams.forEach(team => unique.add(team));
     });
+    return Array.from(unique)
+      .filter(team => team && team.toLowerCase() !== "tbc")
+      .sort();
+  }, []);
+
+  const countryOptions = useMemo(() => {
+    const unique = new Set<string>();
+    players.forEach(player => unique.add(player.country));
     return Array.from(unique).sort();
   }, []);
+
+  const STATE_OPTIONS: Record<string, string[]> = {
+    India: [
+      "Andhra Pradesh",
+      "Arunachal Pradesh",
+      "Assam",
+      "Bihar",
+      "Chhattisgarh",
+      "Goa",
+      "Gujarat",
+      "Haryana",
+      "Himachal Pradesh",
+      "Jharkhand",
+      "Karnataka",
+      "Kerala",
+      "Madhya Pradesh",
+      "Maharashtra",
+      "Manipur",
+      "Meghalaya",
+      "Mizoram",
+      "Nagaland",
+      "Odisha",
+      "Punjab",
+      "Rajasthan",
+      "Sikkim",
+      "Tamil Nadu",
+      "Telangana",
+      "Tripura",
+      "Uttar Pradesh",
+      "Uttarakhand",
+      "West Bengal",
+      "Delhi",
+      "Jammu & Kashmir",
+      "Ladakh",
+      "Puducherry",
+    ],
+    "United States of America": [
+      "Alabama",
+      "Alaska",
+      "Arizona",
+      "Arkansas",
+      "California",
+      "Colorado",
+      "Connecticut",
+      "Delaware",
+      "Florida",
+      "Georgia",
+      "Hawaii",
+      "Idaho",
+      "Illinois",
+      "Indiana",
+      "Iowa",
+      "Kansas",
+      "Kentucky",
+      "Louisiana",
+      "Maine",
+      "Maryland",
+      "Massachusetts",
+      "Michigan",
+      "Minnesota",
+      "Mississippi",
+      "Missouri",
+      "Montana",
+      "Nebraska",
+      "Nevada",
+      "New Hampshire",
+      "New Jersey",
+      "New Mexico",
+      "New York",
+      "North Carolina",
+      "North Dakota",
+      "Ohio",
+      "Oklahoma",
+      "Oregon",
+      "Pennsylvania",
+      "Rhode Island",
+      "South Carolina",
+      "South Dakota",
+      "Tennessee",
+      "Texas",
+      "Utah",
+      "Vermont",
+      "Virginia",
+      "Washington",
+      "West Virginia",
+      "Wisconsin",
+      "Wyoming",
+    ],
+    USA: [
+      "Alabama",
+      "Alaska",
+      "Arizona",
+      "Arkansas",
+      "California",
+      "Colorado",
+      "Connecticut",
+      "Delaware",
+      "Florida",
+      "Georgia",
+      "Hawaii",
+      "Idaho",
+      "Illinois",
+      "Indiana",
+      "Iowa",
+      "Kansas",
+      "Kentucky",
+      "Louisiana",
+      "Maine",
+      "Maryland",
+      "Massachusetts",
+      "Michigan",
+      "Minnesota",
+      "Mississippi",
+      "Missouri",
+      "Montana",
+      "Nebraska",
+      "Nevada",
+      "New Hampshire",
+      "New Jersey",
+      "New Mexico",
+      "New York",
+      "North Carolina",
+      "North Dakota",
+      "Ohio",
+      "Oklahoma",
+      "Oregon",
+      "Pennsylvania",
+      "Rhode Island",
+      "South Carolina",
+      "South Dakota",
+      "Tennessee",
+      "Texas",
+      "Utah",
+      "Vermont",
+      "Virginia",
+      "Washington",
+      "West Virginia",
+      "Wisconsin",
+      "Wyoming",
+    ],
+    "United Arab Emirates": [
+      "Abu Dhabi",
+      "Dubai",
+      "Sharjah",
+      "Ajman",
+      "Umm Al Quwain",
+      "Ras Al Khaimah",
+      "Fujairah",
+    ],
+    UAE: [
+      "Abu Dhabi",
+      "Dubai",
+      "Sharjah",
+      "Ajman",
+      "Umm Al Quwain",
+      "Ras Al Khaimah",
+      "Fujairah",
+    ],
+  };
+
+  const stateOptions = useMemo(() => {
+    if (!country) return [];
+    return STATE_OPTIONS[country] ?? ["Not applicable"];
+  }, [country]);
+
+  useEffect(() => {
+    if (!country) {
+      setStateName("");
+      return;
+    }
+    if (!stateOptions.length) {
+      setStateName("");
+      return;
+    }
+    if (!stateOptions.includes(stateName)) {
+      setStateName(stateOptions[0] ?? "");
+    }
+  }, [country, stateOptions, stateName]);
 
   useEffect(() => {
     if (!ready) return;
@@ -240,19 +427,33 @@ export default function LoginPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <label className="block text-xs text-slate-300">
                     Country
-                    <input
+                    <select
                       value={country}
                       onChange={event => setCountry(event.target.value)}
                       className="mt-1 w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/50"
-                    />
+                    >
+                      <option value="">Select country</option>
+                      {countryOptions.map(item => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                   <label className="block text-xs text-slate-300">
-                    State
-                    <input
+                    State / Region
+                    <select
                       value={stateName}
                       onChange={event => setStateName(event.target.value)}
                       className="mt-1 w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/50"
-                    />
+                    >
+                      <option value="">Select state</option>
+                      {stateOptions.map(item => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                 </div>
                 <label className="block text-xs text-slate-300">

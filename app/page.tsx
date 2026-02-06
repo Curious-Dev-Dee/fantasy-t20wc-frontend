@@ -308,36 +308,55 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#0B0F1A] text-slate-200 pb-24">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 space-y-8">
         <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-600/20 to-purple-600/10 p-6 sm:p-8 shadow-[0_0_40px_rgba(79,70,229,0.15)]">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className="flex items-center gap-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
               {profile.team_photo_url ? (
                 <img
                   src={profile.team_photo_url}
                   alt="Team"
-                  className="h-14 w-14 rounded-full border border-white/10 object-cover"
+                  className="h-11 w-11 rounded-full border border-white/10 object-cover"
                 />
               ) : (
-                <div className="h-14 w-14 rounded-full border border-white/10 bg-slate-800 flex items-center justify-center text-sm">
+                <div className="h-11 w-11 rounded-full border border-white/10 bg-slate-800 flex items-center justify-center text-xs">
                   XI
                 </div>
               )}
               <div>
-                <h1 className="text-2xl font-semibold">
+                <h1 className="text-xl font-semibold text-white">
                   Welcome, {welcomeName}
                 </h1>
-                <p className="text-sm text-slate-400 mt-1">{displayTeamName}</p>
+                <p className="text-xs text-slate-400 mt-1">{displayTeamName}</p>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full md:w-auto">
-              <HeroStat label="Total Score" value={String(totalScore)} />
-              <NextMatchCard label="Next Match" value={nextMatchLabel} time={nextMatchTime} />
-              <HeroStat label="Subs Left" value={team.subsLeftLabel} />
-              <HeroStat label="Boosters" value="Coming Soon" />
             </div>
           </div>
 
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <div className="mt-5 rounded-2xl border border-white/10 bg-black/30 px-4 py-4">
+            <div className="text-xs text-slate-400">Next Match</div>
+            <div className="mt-1 text-base font-semibold text-white">
+              {nextMatchLabel}
+            </div>
+            <div className="mt-1 text-xs text-slate-400">{nextMatchTime}</div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+            <span className="text-white/80">Score {totalScore}</span>
+            <span>•</span>
+            <span>Subs {team.subsLeftLabel}</span>
+            <span>•</span>
+            <span className="text-slate-300">
+              Last Locked: {lastLockedLabel}
+              {lastLockedTime
+                ? ` · ${new Date(lastLockedTime).toLocaleString([], {
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}`
+                : ""}
+            </span>
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href="/team"
               className="px-6 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition"
@@ -352,25 +371,12 @@ export default function HomePage() {
             </Link>
             <Link
               href="/fixtures"
-              className="px-6 py-2 rounded-xl bg-slate-900 text-slate-200 hover:bg-slate-700 transition"
+              className="px-4 py-2 rounded-xl text-slate-400 hover:text-slate-200 transition"
             >
               View All Fixtures
             </Link>
           </div>
         </section>
-
-        <div className="text-xs text-slate-400">
-          Last Locked: <span className="text-slate-200">{lastLockedLabel}</span>
-          {" - "}
-          {lastLockedTime
-            ? new Date(lastLockedTime).toLocaleString([], {
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              })
-            : "-"}
-        </div>
 
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
@@ -386,7 +392,7 @@ export default function HomePage() {
                 score={entry.score}
               />
             ))}
-            <div className="mt-4 border-t border-white/10 pt-3 text-sm text-slate-400 flex justify-between">
+            <div className="mt-4 border-t border-white/10 pt-3 text-xs text-slate-400 flex justify-between">
               <span>Your Rank: <b className="text-white">{myGlobalRank ?? "-"}</b></span>
               <span>Your Score: <b className="text-white">{myGlobalScore ?? "-"}</b></span>
             </div>
@@ -426,40 +432,9 @@ export default function HomePage() {
   );
 }
 
-function HeroStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl bg-black/30 border border-white/10 px-4 py-3 text-center">
-      <div className="text-xs text-slate-400">{label}</div>
-      <div className="text-sm sm:text-base font-semibold text-white mt-1 whitespace-nowrap leading-tight">
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function NextMatchCard({
-  label,
-  value,
-  time,
-}: {
-  label: string;
-  value: string;
-  time: string;
-}) {
-  return (
-    <div className="rounded-2xl bg-black/30 border border-white/10 px-4 py-3 text-center">
-      <div className="text-xs text-slate-400">{label}</div>
-      <div className="text-sm sm:text-base font-semibold text-white mt-1 leading-tight">
-        {value}
-      </div>
-      <div className="text-[11px] text-slate-400 mt-1">{time}</div>
-    </div>
-  );
-}
-
 function Card({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-5">
+    <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-5">
       {children}
     </div>
   );
@@ -477,7 +452,7 @@ function CardHeader({
   return (
     <div className="flex items-center justify-between mb-4">
       <h3 className="text-lg font-semibold">{title}</h3>
-      <Link href={actionHref} className="text-sm text-indigo-400 hover:underline">
+      <Link href={actionHref} className="text-xs text-indigo-400 hover:underline">
         {actionLabel}
       </Link>
     </div>

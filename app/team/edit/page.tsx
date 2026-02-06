@@ -327,16 +327,16 @@ export default function EditTeamPage() {
 
         <div className="flex items-center gap-2 text-[10px] text-slate-200 overflow-x-auto">
           <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 whitespace-nowrap">
-            Budget {team.totalBudget}/{team.limits.MAX_BUDGET}
+            $ {team.totalBudget}/{team.limits.MAX_BUDGET}
           </span>
           <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 whitespace-nowrap">
-            Stars {team.starCount}/{team.limits.MAX_STAR_PLAYERS}
+            ★ {team.starCount}/{team.limits.MAX_STAR_PLAYERS}
           </span>
           <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 whitespace-nowrap">
-            Subs {team.subsLeftLabel}
+            {team.subsLeftLabel === "Unlimited" ? "∞" : team.subsLeftLabel}
           </span>
           <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 whitespace-nowrap">
-            Roles WK {team.roleCounts.WK} · BAT {team.roleCounts.BAT} · AR{" "}
+            WK {team.roleCounts.WK} · BAT {team.roleCounts.BAT} · AR{" "}
             {team.roleCounts.AR} · BOWL {team.roleCounts.BOWL}
           </span>
         </div>

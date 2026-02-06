@@ -27,6 +27,9 @@ export default function TeamPage() {
   const [showLockTip, setShowLockTip] = useState(false);
   const [showAutoLockToast, setShowAutoLockToast] = useState(false);
   const lockTipRef = useRef<HTMLButtonElement | null>(null);
+  const fieldWrapRef = useRef<HTMLDivElement | null>(null);
+  const fieldRef = useRef<HTMLDivElement | null>(null);
+  const [fieldScale, setFieldScale] = useState(1);
 
   const playerRoleMap = useRef(
     new Map(players.map(player => [player.id, player.role] as const))
@@ -69,6 +72,20 @@ export default function TeamPage() {
     return () => clearTimeout(timeout);
   }, [tournament.nextMatch, tournament.now]);
 
+  useEffect(() => {
+    const computeScale = () => {
+      if (!fieldWrapRef.current || !fieldRef.current) return;
+      const wrap = fieldWrapRef.current.getBoundingClientRect();
+      const field = fieldRef.current.getBoundingClientRect();
+      if (field.height === 0) return;
+      const nextScale = Math.min(1, wrap.height / field.height);
+      setFieldScale(Number.isFinite(nextScale) ? nextScale : 1);
+    };
+    computeScale();
+    window.addEventListener("resize", computeScale);
+    return () => window.removeEventListener("resize", computeScale);
+  }, [team.selectedPlayers.length]);
+
   const lockLabel = tournament.lockWindowMatch
     ? `Locked for Match #${tournament.lockWindowMatch.matchId} until ${new Date(
         tournament.lockWindowEndsAt || Date.now()
@@ -77,7 +94,7 @@ export default function TeamPage() {
 
   return (
     <div className="min-h-screen bg-[#0B0F1A] text-white px-4 sm:px-6 py-4">
-      <div className="max-w-6xl mx-auto space-y-4">
+      <div className="max-w-6xl mx-auto space-y-3">
         <div className="flex items-center justify-between">
           <h1 className="text-base sm:text-lg font-semibold">{teamName}</h1>
           <div className="flex gap-3 text-[11px]">
@@ -97,7 +114,7 @@ export default function TeamPage() {
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-3" ref={fieldWrapRef}>
           {team.selectedPlayers.length === 0 && (
             <div className="text-sm text-slate-400 border border-white/10 rounded-xl p-4">
               No players selected yet. Head to Edit Team to build your XI.
@@ -105,14 +122,18 @@ export default function TeamPage() {
           )}
 
           {team.selectedPlayers.length > 0 && (
-            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.35),rgba(15,23,42,0.9))] p-4 sm:p-6">
+            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.35),rgba(15,23,42,0.9))] p-3 sm:p-5">
               <div className="absolute inset-0 opacity-30">
                 <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(16,185,129,0.12)_0,rgba(16,185,129,0.12)_18px,rgba(16,185,129,0.22)_18px,rgba(16,185,129,0.22)_36px)]" />
                 <div className="absolute left-1/2 top-6 h-[70%] w-[70%] -translate-x-1/2 rounded-full border border-white/10" />
                 <div className="absolute left-1/2 top-24 h-14 w-28 -translate-x-1/2 rounded-full border border-white/10" />
                 <div className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10" />
               </div>
-              <div className="relative">
+              <div
+                ref={fieldRef}
+                className="relative origin-top"
+                style={{ transform: `scale(${fieldScale})` }}
+              >
                 <div className="flex items-center justify-between text-[10px] text-slate-200 mb-2">
                   <span>Players {team.teamSize} / 11</span>
                   <span>

@@ -12,16 +12,21 @@ export type UserTeamRow = {
 export async function fetchUserTeam(userId: string) {
   if (!isSupabaseConfigured || !supabase) return null;
   if (!userId) return null;
-  const { data, error } = await supabase
-    .from("user_teams")
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error) {
+  const sessionData = await supabase.auth.getSession();
+  const token = sessionData.data.session?.access_token;
+  if (!token) return null;
+  const response = await fetch("/api/user-team", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
     console.error("Supabase fetch failed", error);
     return null;
   }
-  return data as UserTeamRow;
+  const payload = await response.json();
+  return (payload?.data as UserTeamRow) || null;
 }
 
 export async function upsertUserTeam(
@@ -30,12 +35,19 @@ export async function upsertUserTeam(
 ) {
   if (!isSupabaseConfigured || !supabase) return;
   if (!userId) return;
-  const { error } = await supabase.from("user_teams").upsert({
-    user_id: userId,
-    ...payload,
-    updated_at: new Date().toISOString(),
+  const sessionData = await supabase.auth.getSession();
+  const token = sessionData.data.session?.access_token;
+  if (!token) return;
+  const response = await fetch("/api/user-team", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
   });
-  if (error) {
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
     console.error("Supabase upsert failed", error);
   }
 }

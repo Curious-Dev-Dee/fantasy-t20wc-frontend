@@ -21,6 +21,8 @@ const EMPTY_PROFILE: UserProfile = {
   state: "",
   favorite_team: "",
   team_photo_url: null,
+  full_name_edit_used: false,
+  team_name_edit_used: false,
 };
 
 export function useProfile() {
@@ -53,6 +55,8 @@ export function useProfile() {
           state: remote.state,
           favorite_team: remote.favorite_team,
           team_photo_url: remote.team_photo_url,
+          full_name_edit_used: Boolean(remote.full_name_edit_used),
+          team_name_edit_used: Boolean(remote.team_name_edit_used),
         };
         setProfile(mapped);
         setJSON(scopedKey(STORAGE_KEY, user.id), mapped);
@@ -69,6 +73,8 @@ export function useProfile() {
         state: meta.state || "",
         favorite_team: meta.favorite_team || "",
         team_photo_url: meta.team_photo_url || null,
+        full_name_edit_used: false,
+        team_name_edit_used: false,
       };
 
       if (derived.full_name || derived.team_name) {
@@ -81,6 +87,8 @@ export function useProfile() {
           state: derived.state,
           favorite_team: derived.favorite_team,
           team_photo_url: derived.team_photo_url,
+          full_name_edit_used: derived.full_name_edit_used,
+          team_name_edit_used: derived.team_name_edit_used,
         });
         setProfile(derived);
         setJSON(scopedKey(STORAGE_KEY, user.id), derived);
@@ -103,6 +111,8 @@ export function useProfile() {
         state: next.state,
         favorite_team: next.favorite_team,
         team_photo_url: next.team_photo_url,
+        full_name_edit_used: next.full_name_edit_used,
+        team_name_edit_used: next.team_name_edit_used,
       });
     }
   };

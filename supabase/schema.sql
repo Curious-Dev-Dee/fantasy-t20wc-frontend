@@ -373,6 +373,8 @@ create table if not exists public.user_profiles (
   state text not null,
   favorite_team text not null,
   team_photo_url text,
+  full_name_edit_used boolean default false,
+  team_name_edit_used boolean default false,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

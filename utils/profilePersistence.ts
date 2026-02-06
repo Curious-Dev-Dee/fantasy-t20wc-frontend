@@ -9,6 +9,8 @@ export type UserProfileRow = {
   state: string;
   favorite_team: string;
   team_photo_url: string | null;
+  full_name_edit_used?: boolean | null;
+  team_name_edit_used?: boolean | null;
   created_at?: string | null;
   updated_at?: string | null;
 };

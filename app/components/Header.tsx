@@ -63,6 +63,9 @@ export default function Header() {
             <Link href="/rules" className="hover:underline">
               Points Rules
             </Link>
+            <Link href="/profile" className="hover:underline">
+              Profile
+            </Link>
           </nav>
         )}
       </div>

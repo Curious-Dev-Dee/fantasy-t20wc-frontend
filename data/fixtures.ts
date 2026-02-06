@@ -20,9 +20,7 @@ export const fixtures: Fixture[] = [
     group: "A",
     teams: ["Pakistan", "Netherlands"],
     venue: "Colombo, Sinhalese Sports Club",
-    startTimeUTC: "2026-02-05T22:32:00Z"
-
-,
+    startTimeUTC: "2026-02-07T05:30:00Z",
   },
   {
     matchId: 2,
@@ -30,8 +28,7 @@ export const fixtures: Fixture[] = [
     group: "C",
     teams: ["West Indies", "Scotland"],
     venue: "Kolkata, Eden Gardens",
-    startTimeUTC: "2026-02-05T22:51:00Z"
-,
+    startTimeUTC: "2026-02-07T09:30:00Z",
   },
   {
     matchId: 3,

@@ -156,32 +156,39 @@ export function useTeam() {
     if (!ready || !user || !isConfigured) return;
 
     const loadRemote = async () => {
+      const keyWorking = scopedKey("fantasy_working_team", user.id);
+      const keyLocked = scopedKey("fantasy_locked_teams", user.id);
+      const keySubs = scopedKey("fantasy_subs_used", user.id);
+      const localWorking = getJSON<WorkingTeam | null>(keyWorking, null);
+      const localLocked = getJSON<LockedTeam[] | null>(keyLocked, null);
+      const localSubs = Number(localStorage.getItem(keySubs) || 0);
+
       const remote = await fetchUserTeam(user.id);
       if (remote) {
         const remoteWorking = remote.working_team as WorkingTeam | null;
         const remoteLocked = remote.locked_teams as LockedTeam[] | null;
-        const keyWorking = scopedKey("fantasy_working_team", user.id);
-        const keyLocked = scopedKey("fantasy_locked_teams", user.id);
-        const keySubs = scopedKey("fantasy_subs_used", user.id);
 
-        const needsDefaultTeam =
-          !remoteWorking || !Array.isArray(remoteWorking.players);
+        const hasRemoteWorking =
+          remoteWorking && Array.isArray(remoteWorking.players);
+        const hasLocalWorking =
+          localWorking && Array.isArray(localWorking.players);
 
-        if (remoteWorking && Array.isArray(remoteWorking.players)) {
+        if (hasRemoteWorking) {
           const cleaned = sanitizeWorkingTeam(remoteWorking);
           setWorkingTeam(cleaned);
           localStorage.setItem(keyWorking, JSON.stringify(cleaned));
-        } else {
-          const cleaned = sanitizeWorkingTeam({
-            players: [],
-            captainId: null,
-            viceCaptainId: null,
-          });
+        } else if (hasLocalWorking) {
+          const cleaned = sanitizeWorkingTeam(localWorking);
           setWorkingTeam(cleaned);
           localStorage.setItem(keyWorking, JSON.stringify(cleaned));
         }
+
         if (remoteLocked && Array.isArray(remoteLocked)) {
           const cleanedLocked = dedupeLockedTeams(remoteLocked);
+          setLockedTeams(cleanedLocked);
+          localStorage.setItem(keyLocked, JSON.stringify(cleanedLocked));
+        } else if (localLocked && Array.isArray(localLocked)) {
+          const cleanedLocked = dedupeLockedTeams(localLocked);
           setLockedTeams(cleanedLocked);
           localStorage.setItem(keyLocked, JSON.stringify(cleanedLocked));
         }
@@ -198,47 +205,62 @@ export function useTeam() {
           setLockedTeams(history);
           localStorage.setItem(keyLocked, JSON.stringify(history));
         }
+
         if (typeof remote.subs_used === "number") {
           setSubsUsed(remote.subs_used);
           localStorage.setItem(keySubs, String(remote.subs_used));
-        } else {
-          setSubsUsed(0);
-          localStorage.setItem(keySubs, "0");
+        } else if (Number.isFinite(localSubs)) {
+          setSubsUsed(localSubs);
+          localStorage.setItem(keySubs, String(localSubs));
         }
-        if (needsDefaultTeam || remoteLocked || typeof remote.subs_used !== "number") {
-          await upsertUserTeam(user.id, {
-            working_team:
-              remoteWorking && Array.isArray(remoteWorking.players)
-                ? sanitizeWorkingTeam(remoteWorking)
-                : {
-                    players: [],
-                    captainId: null,
-                    viceCaptainId: null,
-                  },
-            locked_teams:
-              remoteLocked && Array.isArray(remoteLocked)
-                ? dedupeLockedTeams(remoteLocked)
-                : [],
-            subs_used:
-              typeof remote.subs_used === "number"
-                ? remote.subs_used
-                : 0,
-          });
-        }
+
+        await upsertUserTeam(user.id, {
+          working_team: hasRemoteWorking
+            ? sanitizeWorkingTeam(remoteWorking!)
+            : hasLocalWorking
+            ? sanitizeWorkingTeam(localWorking!)
+            : {
+                players: [],
+                captainId: null,
+                viceCaptainId: null,
+              },
+          locked_teams:
+            remoteLocked && Array.isArray(remoteLocked)
+              ? dedupeLockedTeams(remoteLocked)
+              : localLocked && Array.isArray(localLocked)
+              ? dedupeLockedTeams(localLocked)
+              : [],
+          subs_used:
+            typeof remote.subs_used === "number"
+              ? remote.subs_used
+              : Number.isFinite(localSubs)
+              ? localSubs
+              : 0,
+        });
       } else {
-        const keyWorking = scopedKey("fantasy_working_team", user.id);
-        const keyLocked = scopedKey("fantasy_locked_teams", user.id);
-        const keySubs = scopedKey("fantasy_subs_used", user.id);
-        const localWorking = getJSON<WorkingTeam | null>(keyWorking, null);
-        const localLocked = getJSON<LockedTeam[] | null>(keyLocked, null);
-        const localSubs = Number(localStorage.getItem(keySubs) || 0);
+        if (localWorking && Array.isArray(localWorking.players)) {
+          const cleaned = sanitizeWorkingTeam(localWorking);
+          setWorkingTeam(cleaned);
+          localStorage.setItem(keyWorking, JSON.stringify(cleaned));
+        }
+        if (localLocked && Array.isArray(localLocked)) {
+          const cleanedLocked = dedupeLockedTeams(localLocked);
+          setLockedTeams(cleanedLocked);
+          localStorage.setItem(keyLocked, JSON.stringify(cleanedLocked));
+        }
+        if (Number.isFinite(localSubs)) {
+          setSubsUsed(localSubs);
+          localStorage.setItem(keySubs, String(localSubs));
+        }
         await upsertUserTeam(user.id, {
           working_team: localWorking
             ? sanitizeWorkingTeam(localWorking)
-            : null,
-          locked_teams: localLocked
-            ? dedupeLockedTeams(localLocked)
-            : null,
+            : {
+                players: [],
+                captainId: null,
+                viceCaptainId: null,
+              },
+          locked_teams: localLocked ? dedupeLockedTeams(localLocked) : [],
           subs_used: Number.isFinite(localSubs) ? localSubs : 0,
         });
       }

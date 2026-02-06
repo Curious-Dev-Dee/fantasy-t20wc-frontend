@@ -26,10 +26,12 @@ export default function ProfilePage() {
     const nextFullName = canEditName ? fullName.trim() : profile.full_name;
     const nextTeamName = canEditTeam ? teamName.trim() : profile.team_name;
 
-    const fullNameChanged =
-      canEditName && nextFullName && nextFullName !== profile.full_name;
-    const teamNameChanged =
-      canEditTeam && nextTeamName && nextTeamName !== profile.team_name;
+    const fullNameChanged = Boolean(
+      canEditName && nextFullName && nextFullName !== profile.full_name
+    );
+    const teamNameChanged = Boolean(
+      canEditTeam && nextTeamName && nextTeamName !== profile.team_name
+    );
 
     if (canEditName && !nextFullName) {
       setMessage("Full name cannot be empty.");

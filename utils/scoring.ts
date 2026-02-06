@@ -71,7 +71,7 @@ export const scoreMatchBase = (stats: MatchStats, role: PlayerRole) => {
   if (stats.bowling) {
     const { wickets, maidens, overs, runsConceded } = stats.bowling;
     points += wickets * 25;
-    points += maidens * 15;
+    points += maidens * 10;
     if (wickets >= 5) points += 30;
     else if (wickets === 4) points += 20;
     else if (wickets === 3) points += 15;
@@ -80,10 +80,10 @@ export const scoreMatchBase = (stats: MatchStats, role: PlayerRole) => {
 
   if (stats.fielding) {
     const { catches, stumpings, runOutDirect, runOutIndirect } = stats.fielding;
-    points += catches * 10;
+    points += catches * 8;
     if (catches >= 3) points += 5;
-    points += stumpings * 15;
-    points += runOutDirect * 15;
+    points += stumpings * 10;
+    points += runOutDirect * 10;
     points += runOutIndirect * 6;
   }
 
@@ -113,8 +113,7 @@ export const scorePlayerMatches = (
     const basePoints = scoreMatchBase(match, role);
     let motmBonus = 0;
     if (match.manOfTheMatch) {
-      if (isCaptain) motmBonus = 50;
-      else if (isViceCaptain) motmBonus = 30;
+      if (isCaptain || isViceCaptain) motmBonus = 20;
     }
     return {
       matchId: match.matchId,
@@ -187,10 +186,8 @@ export const scoreLockedTeams = ({
       const base = scoreMatchBase(match, role);
       const multiplier = isCaptain ? 2 : isVice ? 1.5 : 1;
       const motmBonus = match.manOfTheMatch
-        ? isCaptain
-          ? 50
-          : isVice
-          ? 30
+        ? isCaptain || isVice
+          ? 20
           : 0
         : 0;
       total += Math.round(base * multiplier) + motmBonus;
@@ -219,10 +216,8 @@ export const scoreLockedMatch = ({
     const base = scoreMatchBase(match, role);
     const multiplier = isCaptain ? 2 : isVice ? 1.5 : 1;
     const motmBonus = match.manOfTheMatch
-      ? isCaptain
-        ? 50
-        : isVice
-        ? 30
+      ? isCaptain || isVice
+        ? 20
         : 0
       : 0;
     total += Math.round(base * multiplier) + motmBonus;

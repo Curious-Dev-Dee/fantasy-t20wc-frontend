@@ -40,7 +40,7 @@ export default function RulesPage() {
 
         <Section title="Bowling">
           <Rule label="Wicket" value="+25" />
-          <Rule label="Maiden Over" value="+15" />
+          <Rule label="Maiden Over" value="+10" />
           <Rule label="3 Wickets" value="+15 bonus" />
           <Rule label="4 Wickets" value="+20 bonus" />
           <Rule label="5 Wickets" value="+30 bonus" />
@@ -53,18 +53,17 @@ export default function RulesPage() {
         </Section>
 
         <Section title="Fielding">
-          <Rule label="Catch" value="+10" />
+          <Rule label="Catch" value="+8" />
           <Rule label="3+ catches in an innings" value="+5 bonus" />
-          <Rule label="Stumping" value="+15" />
-          <Rule label="Run out (direct)" value="+15" />
+          <Rule label="Stumping" value="+10" />
+          <Rule label="Run out (direct)" value="+10" />
           <Rule label="Run out (indirect)" value="+6" />
         </Section>
 
         <Section title="Captaincy">
           <Rule label="Captain" value="2x base points" />
           <Rule label="Vice Captain" value="1.5x base points" />
-          <Rule label="Man of the Match (Captain)" value="+50" />
-          <Rule label="Man of the Match (Vice Captain)" value="+30" />
+          <Rule label="Man of the Match (Captain/Vice Captain only)" value="+20" />
         </Section>
 
       </div>

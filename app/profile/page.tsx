@@ -11,11 +11,13 @@ export default function ProfilePage() {
   const [teamName, setTeamName] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoDirty, setPhotoDirty] = useState(false);
 
   useEffect(() => {
     setFullName(profile.full_name || "");
     setTeamName(profile.team_name || "");
     setPhotoPreview(profile.team_photo_url || null);
+    setPhotoDirty(false);
   }, [profile.full_name, profile.team_name]);
 
   const canEditName = !profile.full_name_edit_used;
@@ -54,6 +56,7 @@ export default function ProfilePage() {
     });
 
     setMessage("Profile updated.");
+    setPhotoDirty(false);
   };
 
   if (loading) {
@@ -70,12 +73,14 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file) {
       setPhotoPreview(profile.team_photo_url || null);
+      setPhotoDirty(false);
       return;
     }
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result?.toString() || null;
       setPhotoPreview(result);
+      setPhotoDirty(true);
     };
     reader.readAsDataURL(file);
   };
@@ -148,18 +153,24 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <label className="block text-xs text-slate-300">
-            Team Photo (optional)
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoChange}
-              className="mt-1 w-full text-xs text-slate-300"
-            />
-            <span className="mt-1 block text-[10px] text-slate-400">
+          <div className="space-y-2">
+            <div className="text-xs text-slate-300">Team Photo (optional)</div>
+            <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2 text-xs text-slate-200 cursor-pointer">
+              <span className="text-slate-300">Upload team logo</span>
+              <span className="rounded-full bg-indigo-600/80 px-3 py-1 text-[10px] text-white">
+                Choose File
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="hidden"
+              />
+            </label>
+            <div className="text-[10px] text-slate-400">
               You can change this anytime.
-            </span>
-          </label>
+            </div>
+          </div>
           {photoPreview && (
             <img
               src={photoPreview}
@@ -171,7 +182,7 @@ export default function ProfilePage() {
           <button
             onClick={handleSave}
             className="w-full rounded-xl bg-indigo-600 py-2 text-sm font-semibold disabled:opacity-60"
-            disabled={!canEditName && !canEditTeam}
+            disabled={!canEditName && !canEditTeam && !photoDirty}
           >
             Save Changes
           </button>

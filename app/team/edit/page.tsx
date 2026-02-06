@@ -77,6 +77,8 @@ export default function EditTeamPage() {
   const [activeTab, setActiveTab] = useState<"selected" | "available">(
     "selected"
   );
+  const [showMatchPicker, setShowMatchPicker] = useState(false);
+  const [showTeamPicker, setShowTeamPicker] = useState(false);
 
   useEffect(() => {
     setSavedSnapshot(loadSnapshot(user?.id));
@@ -529,41 +531,55 @@ export default function EditTeamPage() {
                   <option value="BOWL">BOWL</option>
                 </select>
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 relative">
                 <span className="text-slate-400">Match Filter</span>
-                <div className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2">
-                  <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
-                    <button
-                      type="button"
-                      onClick={() => clearMatchFilter()}
-                      className={`px-3 py-1 rounded-full text-[11px] border ${
-                        matchFilter.length === 0
-                          ? "bg-indigo-600/80 border-indigo-400 text-white"
-                          : "bg-white/5 border-white/10 text-slate-300"
-                      }`}
-                    >
+                <button
+                  type="button"
+                  onClick={() => setShowMatchPicker(prev => !prev)}
+                  className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-left text-slate-200"
+                >
+                  {matchFilter.length === 0
+                    ? "All Matches"
+                    : `${matchFilter.length} selected`}
+                </button>
+                {showMatchPicker && (
+                  <div className="absolute z-20 mt-2 w-full rounded-lg border border-white/10 bg-[#0F1626] p-3 shadow-xl">
+                    <div className="flex items-center justify-between mb-2 text-xs text-slate-300">
+                      <span>Select matches</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowMatchPicker(false)}
+                        className="text-indigo-300 hover:underline"
+                      >
+                        Done
+                      </button>
+                    </div>
+                    <label className="flex items-center gap-2 text-[11px] text-slate-200 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={matchFilter.length === 0}
+                        onChange={() => clearMatchFilter()}
+                      />
                       All Matches
-                    </button>
-                    {tournament.nextMatches?.map(match => {
-                      const active = matchFilter.includes(String(match.matchId));
-                      return (
-                        <button
+                    </label>
+                    <div className="max-h-40 overflow-y-auto space-y-2">
+                      {tournament.nextMatches?.map(match => (
+                        <label
                           key={match.matchId}
-                          type="button"
-                          onClick={() => toggleMatchFilter(String(match.matchId))}
-                          className={`px-3 py-1 rounded-full text-[11px] border ${
-                            active
-                              ? "bg-emerald-600/70 border-emerald-400 text-white"
-                              : "bg-white/5 border-white/10 text-slate-300"
-                          }`}
+                          className="flex items-center gap-2 text-[11px] text-slate-200"
                         >
+                          <input
+                            type="checkbox"
+                            checked={matchFilter.includes(String(match.matchId))}
+                            onChange={() => toggleMatchFilter(String(match.matchId))}
+                          />
                           M{match.matchId} {teamShort(match.teams[0])} vs{" "}
                           {teamShort(match.teams[1])}
-                        </button>
-                      );
-                    })}
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               <label className="space-y-1">
                 <span className="text-slate-400">Search</span>
@@ -574,42 +590,56 @@ export default function EditTeamPage() {
                   className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2"
                 />
               </label>
-              <div className="space-y-1">
+              <div className="space-y-1 relative">
                 <span className="text-slate-400">Teams</span>
-                <div className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2">
-                  <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
-                    <button
-                      type="button"
-                      onClick={() => clearCountryFilter()}
-                      className={`px-3 py-1 rounded-full text-[11px] border ${
-                        countryFilter.length === 0
-                          ? "bg-indigo-600/80 border-indigo-400 text-white"
-                          : "bg-white/5 border-white/10 text-slate-300"
-                      }`}
-                    >
+                <button
+                  type="button"
+                  onClick={() => setShowTeamPicker(prev => !prev)}
+                  className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-left text-slate-200"
+                >
+                  {countryFilter.length === 0
+                    ? "All Teams"
+                    : `${countryFilter.length} selected`}
+                </button>
+                {showTeamPicker && (
+                  <div className="absolute z-20 mt-2 w-full rounded-lg border border-white/10 bg-[#0F1626] p-3 shadow-xl">
+                    <div className="flex items-center justify-between mb-2 text-xs text-slate-300">
+                      <span>Select teams</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowTeamPicker(false)}
+                        className="text-indigo-300 hover:underline"
+                      >
+                        Done
+                      </button>
+                    </div>
+                    <label className="flex items-center gap-2 text-[11px] text-slate-200 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={countryFilter.length === 0}
+                        onChange={() => clearCountryFilter()}
+                      />
                       All Teams
-                    </button>
-                    {countries
-                      .filter(c => c !== "ALL")
-                      .map(country => {
-                        const active = countryFilter.includes(country);
-                        return (
-                          <button
+                    </label>
+                    <div className="max-h-40 overflow-y-auto space-y-2">
+                      {countries
+                        .filter(c => c !== "ALL")
+                        .map(country => (
+                          <label
                             key={country}
-                            type="button"
-                            onClick={() => toggleCountryFilter(country)}
-                            className={`px-3 py-1 rounded-full text-[11px] border ${
-                              active
-                                ? "bg-emerald-600/70 border-emerald-400 text-white"
-                                : "bg-white/5 border-white/10 text-slate-300"
-                            }`}
+                            className="flex items-center gap-2 text-[11px] text-slate-200"
                           >
+                            <input
+                              type="checkbox"
+                              checked={countryFilter.includes(country)}
+                              onChange={() => toggleCountryFilter(country)}
+                            />
                             {country}
-                          </button>
-                        );
-                      })}
+                          </label>
+                        ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               <label className="space-y-1">
                 <span className="text-slate-400">Points / Star</span>

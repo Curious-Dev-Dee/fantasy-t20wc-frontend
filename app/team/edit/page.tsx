@@ -282,7 +282,9 @@ export default function EditTeamPage() {
         <div className="flex flex-col gap-2">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold">Edit Team</h1>
+              <h1 className="text-2xl font-semibold tracking-tight bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">
+                Edit Team
+              </h1>
               <p className="text-[11px] text-indigo-300 mt-1">
                 Next Match: {nextMatchLabel} ·{" "}
                 {formatLocalTime(tournament.nextMatch?.startTimeUTC ?? null)} ·{" "}
@@ -294,10 +296,16 @@ export default function EditTeamPage() {
               </p>
             </div>
             <div className="flex gap-2 text-[11px]">
-              <Link href="/" className="text-indigo-300 hover:underline">
+              <Link
+                href="/"
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-indigo-100 hover:border-white/30"
+              >
                 Home
               </Link>
-              <Link href="/team" className="text-indigo-300 hover:underline">
+              <Link
+                href="/team"
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-indigo-100 hover:border-white/30"
+              >
                 View Team
               </Link>
             </div>
@@ -454,24 +462,24 @@ export default function EditTeamPage() {
                       <button
                         onClick={() => team.setCaptain(player!.id)}
                         disabled={team.isEditLocked}
-                        className={`text-xs px-2 py-1 rounded ${
+                        className={`text-xs px-2 py-1 rounded-full ${
                           isCaptain
                             ? "bg-indigo-600"
                             : "bg-slate-700 hover:bg-slate-600"
                         } disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale`}
                       >
-                        Captain
+                        C
                       </button>
                       <button
                         onClick={() => team.setViceCaptain(player!.id)}
                         disabled={team.isEditLocked}
-                        className={`text-xs px-2 py-1 rounded ${
+                        className={`text-xs px-2 py-1 rounded-full ${
                           isViceCaptain
                             ? "bg-purple-600"
                             : "bg-slate-700 hover:bg-slate-600"
                         } disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale`}
                       >
-                        Vice
+                        VC
                       </button>
                     </div>
                   </div>
@@ -482,9 +490,9 @@ export default function EditTeamPage() {
                       highlight(player!.id);
                     }}
                     disabled={team.isEditLocked}
-                    className="px-3 py-2 rounded bg-red-600 text-xs disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
+                    className="h-9 w-9 rounded-full bg-red-600 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale flex items-center justify-center"
                   >
-                    {"Remove ->"}
+                    −
                   </button>
                 </div>
               );
@@ -712,7 +720,7 @@ export default function EditTeamPage() {
                       highlight(player.id);
                     }}
                     disabled={!canAdd || selected || team.isEditLocked}
-                    className={`px-3 py-2 rounded text-xs ${
+                    className={`h-9 w-9 rounded-full text-sm font-semibold flex items-center justify-center ${
                       selected
                         ? "bg-slate-700 cursor-not-allowed"
                         : canAdd
@@ -720,7 +728,7 @@ export default function EditTeamPage() {
                         : "bg-slate-700 cursor-not-allowed"
                     } disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale`}
                   >
-                    {"<- Add"}
+                    +
                   </button>
                 </div>
               );

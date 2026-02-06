@@ -303,57 +303,56 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#0B0F1A] text-slate-200 pb-24">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 space-y-8">
-        <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-600/20 to-purple-600/10 p-6 sm:p-8 shadow-[0_0_40px_rgba(79,70,229,0.15)]">
-          <div className="flex items-start justify-between gap-4">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
+        <section className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               {profile.team_photo_url ? (
                 <img
                   src={profile.team_photo_url}
                   alt="Team"
-                  className="h-11 w-11 rounded-full border border-white/10 object-cover"
+                  className="h-10 w-10 rounded-full border border-white/10 object-cover"
                 />
               ) : (
-                <div className="h-11 w-11 rounded-full border border-white/10 bg-slate-800 flex items-center justify-center text-xs">
+                <div className="h-10 w-10 rounded-full border border-white/10 bg-slate-800 flex items-center justify-center text-[10px]">
                   XI
                 </div>
               )}
               <div>
-                <h1 className="text-xl font-semibold text-white">
+                <h1 className="text-base font-semibold text-white">
                   Welcome, {welcomeName}
                 </h1>
-                <p className="text-xs text-slate-400 mt-1">{displayTeamName}</p>
+                <p className="text-xs text-slate-400">{displayTeamName}</p>
               </div>
             </div>
           </div>
 
-          <div className="mt-5 rounded-2xl border border-white/10 bg-black/30 px-4 py-4">
-            <div className="text-xs text-slate-400">Next Match</div>
-            <div className="mt-1 text-base font-semibold text-white">
+          <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-600/18 to-transparent p-5">
+            <div className="text-[11px] uppercase tracking-[0.2em] text-indigo-200/80">
+              Next Match
+            </div>
+            <div className="mt-2 text-lg font-semibold text-white">
               {nextMatchLabel}
             </div>
-            <div className="mt-1 text-xs text-slate-400">{nextMatchTime}</div>
+            <div className="mt-1 text-sm text-slate-300">{nextMatchTime}</div>
+            <div className="mt-2 text-xs text-slate-400">
+              Lock status: {tournament.nextMatch ? `Locks at ${nextMatchTime}` : "TBD"}
+            </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-400">
-            <span className="text-white/80">Score {totalScore}</span>
-            <span>•</span>
-            <span>Subs {team.subsLeftLabel}</span>
-            <span>•</span>
-            <span className="text-slate-300">
-              Last Locked: {lastLockedLabel}
-              {lastLockedTime
-                ? ` · ${new Date(lastLockedTime).toLocaleString([], {
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}`
-                : ""}
+          <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400">
+            <span>
+              Team: <span className="text-white">{displayTeamName}</span>
+            </span>
+            <span>
+              Score: <span className="text-white">{totalScore}</span>
+            </span>
+            <span>
+              Subs Left: <span className="text-white">{team.subsLeftLabel}</span>
             </span>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="flex items-center gap-3">
             <Link
               href="/team"
               className="px-6 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition"
@@ -362,20 +361,32 @@ export default function HomePage() {
             </Link>
             <Link
               href="/team/edit"
-              className="px-6 py-2 rounded-xl bg-slate-800 text-slate-200 hover:bg-slate-700 transition"
+              className="px-5 py-2 rounded-xl bg-white/5 text-slate-200 hover:bg-white/10 transition"
             >
               Edit Team
             </Link>
             <Link
               href="/fixtures"
-              className="px-4 py-2 rounded-xl text-slate-400 hover:text-slate-200 transition"
+              className="ml-auto text-xs text-slate-400 hover:text-slate-200 transition"
             >
               View All Fixtures
             </Link>
           </div>
+
+          <div className="text-xs text-slate-400">
+            Last Locked: {lastLockedLabel}
+            {lastLockedTime
+              ? ` · ${new Date(lastLockedTime).toLocaleString([], {
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}`
+              : ""}
+          </div>
         </section>
 
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <Card>
             <CardHeader title="Global Leaderboard" actionLabel="View All" actionHref="/leaderboard" />
             {globalTop.length === 0 && (

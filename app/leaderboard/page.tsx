@@ -229,6 +229,11 @@ export default function LeaderboardPage() {
     lockedHistory,
   ]);
 
+  const myEntry = useMemo(() => {
+    if (!user) return null;
+    return displayTeams.find(team => team.id === user.id) || null;
+  }, [displayTeams, user]);
+
   const badgeForRank = (rank: number) => {
     if (rank === 1)
       return {
@@ -311,7 +316,14 @@ export default function LeaderboardPage() {
 
         <div className="space-y-3">
           {activeTab === "global" &&
-            displayTeams.slice(0, 50).map(team => {
+            <>
+              {myEntry && myEntry.rank > 50 && (
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+                  Your Rank: <b>#{myEntry.rank}</b> · Your Score:{" "}
+                  <b>{myEntry.score}</b>
+                </div>
+              )}
+              {displayTeams.slice(0, 50).map(team => {
               const badge = badgeForRank(team.rank);
               const isMe = Boolean(user && team.id === user.id);
               return (
@@ -354,6 +366,8 @@ export default function LeaderboardPage() {
                 </Link>
               );
             })}
+            </>
+          }
 
           {activeTab === "private" && (
             <div className="space-y-5">

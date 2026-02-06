@@ -402,7 +402,7 @@ export default function EditTeamPage() {
               return (
                 <div
                   key={player!.id}
-                  className={`border border-white/10 rounded-xl p-4 flex justify-between items-start gap-4 transition-all duration-200 cursor-pointer ${
+                  className={`border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between gap-3 transition-all duration-200 cursor-pointer ${
                     recentId === player!.id ? "ring-2 ring-indigo-400/70" : ""
                   }`}
                   onClick={() => {
@@ -410,7 +410,7 @@ export default function EditTeamPage() {
                     setShowPlayerSheet(true);
                   }}
                 >
-                  <div className="flex gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="h-11 w-11 rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
                       <img
                         src="/player-silhouette.svg"
@@ -418,8 +418,8 @@ export default function EditTeamPage() {
                         className="h-full w-full object-cover"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <div className="font-medium flex items-center gap-2">
+                    <div className="space-y-1 min-w-0">
+                      <div className="font-medium flex items-center gap-2 min-w-0">
                         {player!.name}
                         {player!.isStar && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full border border-yellow-400/50 text-yellow-200 bg-yellow-500/10">
@@ -432,10 +432,21 @@ export default function EditTeamPage() {
                       </div>
                     </div>
 
-                    <div className="flex gap-2 mt-2 text-[10px] text-slate-300">
-                      {isCaptain && <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-white">C</span>}
-                      {isViceCaptain && <span className="rounded-full bg-purple-600 px-2 py-0.5 text-white">VC</span>}
-                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {isCaptain && (
+                      <span className="rounded-full border border-indigo-400/50 bg-indigo-500/20 px-2 py-0.5 text-[10px] text-indigo-100">
+                        C
+                      </span>
+                    )}
+                    {isViceCaptain && (
+                      <span className="rounded-full border border-purple-400/50 bg-purple-500/20 px-2 py-0.5 text-[10px] text-purple-100">
+                        VC
+                      </span>
+                    )}
+                    <span className="h-7 w-7 rounded-full bg-red-600/90 text-white text-sm flex items-center justify-center">
+                      −
+                    </span>
                   </div>
                 </div>
               );
@@ -461,7 +472,7 @@ export default function EditTeamPage() {
               return (
                 <div
                   key={player.id}
-                  className={`border border-white/10 rounded-xl p-4 flex justify-between items-start gap-4 transition-all duration-200 cursor-pointer ${
+                  className={`border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between gap-3 transition-all duration-200 cursor-pointer ${
                     recentId === player.id ? "ring-2 ring-emerald-400/70" : ""
                   }`}
                   onClick={() => {
@@ -469,7 +480,7 @@ export default function EditTeamPage() {
                     setShowPlayerSheet(true);
                   }}
                 >
-                  <div className="flex gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="h-11 w-11 rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
                       <img
                         src="/player-silhouette.svg"
@@ -477,8 +488,8 @@ export default function EditTeamPage() {
                         className="h-full w-full object-cover"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <div className="font-medium flex items-center gap-2">
+                    <div className="space-y-1 min-w-0">
+                      <div className="font-medium flex items-center gap-2 min-w-0">
                         {player.name}
                         {player.isStar && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full border border-yellow-400/50 text-yellow-200 bg-yellow-500/10">
@@ -490,6 +501,11 @@ export default function EditTeamPage() {
                         {player.role} - {player.country} - {player.credit}
                       </div>
                     </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="h-7 w-7 rounded-full bg-green-600/90 text-white text-sm flex items-center justify-center">
+                      +
+                    </span>
                   </div>
                 </div>
               );

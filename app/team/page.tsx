@@ -95,26 +95,12 @@ export default function TeamPage() {
   return (
     <div className="min-h-screen bg-[#0B0F1A] text-white px-4 sm:px-6 py-4">
       <div className="max-w-6xl mx-auto space-y-3">
-        <div className="flex items-center justify-between">
-          <h1 className="text-base sm:text-lg font-semibold">{teamName}</h1>
-          <div className="flex gap-3 text-[11px]">
-            <Link href="/" className="text-indigo-300 hover:underline">
-              Home
-            </Link>
-            {team.isEditLocked ? (
-              <span className="text-slate-500">Edit Team (Locked)</span>
-            ) : (
-              <Link
-                href="/team/edit"
-                className="text-indigo-300 hover:underline"
-              >
-                Edit Team
-              </Link>
-            )}
-          </div>
-        </div>
+        <div className="h-0" />
 
-        <div className="space-y-3" ref={fieldWrapRef}>
+        <div
+          className="space-y-3 h-[calc(100vh-140px)] sm:h-auto"
+          ref={fieldWrapRef}
+        >
           {team.selectedPlayers.length === 0 && (
             <div className="text-sm text-slate-400 border border-white/10 rounded-xl p-4">
               No players selected yet. Head to Edit Team to build your XI.
@@ -134,12 +120,25 @@ export default function TeamPage() {
                 className="relative origin-top"
                 style={{ transform: `scale(${fieldScale})` }}
               >
-                <div className="flex items-center justify-between text-[10px] text-slate-200 mb-2">
-                  <span>Players {team.teamSize} / 11</span>
-                  <span>
-                    Credits Left{" "}
-                    {Math.max(team.limits.MAX_BUDGET - team.totalBudget, 0).toFixed(1)}
+                <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-200 mb-1">
+                  <span className="font-semibold truncate max-w-[55%]">
+                    {teamName}
                   </span>
+                  <div className="flex gap-3 text-[10px] sm:text-[11px]">
+                    <Link href="/" className="text-indigo-200 hover:underline">
+                      Home
+                    </Link>
+                    {team.isEditLocked ? (
+                      <span className="text-slate-400">Edit Team (Locked)</span>
+                    ) : (
+                      <Link
+                        href="/team/edit"
+                        className="text-indigo-200 hover:underline"
+                      >
+                        Edit Team
+                      </Link>
+                    )}
+                  </div>
                 </div>
                 <GroundRow
                   title="Wicket Keeper"
@@ -217,11 +216,11 @@ function GroundRow({
   if (validPlayers.length === 0) return null;
 
   return (
-    <div className="mb-4">
-      <div className="text-[9px] uppercase tracking-[0.35em] text-emerald-200/70 mb-2 text-center">
+    <div className="mb-3 sm:mb-4">
+      <div className="text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70 mb-1.5 text-center">
         {title}
       </div>
-      <div className="flex flex-wrap justify-center gap-3">
+      <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
         {validPlayers.map(player => {
           const id = player!.id;
           const role: PlayerRole = playerRoleMap.get(id) || player!.role;
@@ -238,9 +237,9 @@ function GroundRow({
           const total =
             Math.round(breakdown.basePoints * multiplier) + breakdown.motmBonus;
           return (
-            <div key={id} className="flex flex-col items-center gap-1">
+            <div key={id} className="flex flex-col items-center gap-0.5">
               <div className="relative">
-                <div className="h-10 w-10 rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+                <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shadow-[0_0_12px_rgba(16,185,129,0.2)]">
                   <img
                     src="/player-silhouette.svg"
                     alt={player!.name}
@@ -258,13 +257,15 @@ function GroundRow({
                   </span>
                 )}
               </div>
-              <div className="text-[10px] font-medium text-white text-center max-w-[84px] truncate">
+              <div className="text-[9px] sm:text-[10px] font-medium text-white text-center max-w-[70px] sm:max-w-[84px] truncate">
                 {player!.name}
               </div>
-              <div className="rounded-full bg-white/10 border border-white/15 px-2 py-0.5 text-[9px] text-slate-200">
+              <div className="rounded-full bg-white/10 border border-white/15 px-2 py-0.5 text-[8px] sm:text-[9px] text-slate-200">
                 {player!.credit} cr
               </div>
-              <div className="text-[9px] text-slate-300">{total} pts</div>
+              <div className="text-[8px] sm:text-[9px] text-slate-300">
+                {total} pts
+              </div>
             </div>
           );
         })}

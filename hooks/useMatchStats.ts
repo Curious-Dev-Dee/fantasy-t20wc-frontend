@@ -15,7 +15,7 @@ const STORAGE_KEY = "fantasy_match_stats";
 
 export function useMatchStats() {
   const { user, ready, isConfigured } = useAuth();
-  const [stats, setStats] = useState<PlayerMatchStats[]>(baseStats);
+  const [stats, setStats] = useState<PlayerMatchStats[]>([]);
   const isRemote = Boolean(user && isConfigured);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -23,13 +23,12 @@ export function useMatchStats() {
     if (!ready) return;
     if (user && isConfigured) {
       const loadRemote = async () => {
-        const rows = await fetchMatchStats();
-        if (rows.length > 0) {
-          setStats(normalizeMatchStats(rows));
-          return;
-        }
-        await upsertMatchStats(baseStats);
-        setStats(baseStats);
+      const rows = await fetchMatchStats();
+      if (rows.length > 0) {
+        setStats(normalizeMatchStats(rows));
+        return;
+      }
+      setStats([]);
       };
       loadRemote();
       return;
@@ -38,10 +37,10 @@ export function useMatchStats() {
     const key = scopedKey(STORAGE_KEY, user?.id);
     const parsed = getJSON<PlayerMatchStats[] | null>(key, null);
     if (!parsed) {
-      setJSON(key, baseStats);
+      setJSON(key, []);
       return;
     }
-    if (Array.isArray(parsed) && parsed.length > 0) {
+    if (Array.isArray(parsed)) {
       setStats(parsed);
     }
   }, [ready, user, isConfigured]);

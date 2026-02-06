@@ -125,51 +125,36 @@ export default function TeamPage() {
                     </div>
                   </div>
 
-                  <div className="absolute z-30 left-1/2 top-[12%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
-                    Wicket Keepers
+                  <div className="absolute inset-0 flex flex-col justify-between px-[6%] pt-[14%] pb-[6%]">
+                    <GroundRow
+                      title="Wicket Keepers"
+                      players={team.selectedPlayers.filter(p => p?.role === "WK")}
+                      team={team}
+                      statsMap={statsMap.current}
+                      playerRoleMap={playerRoleMap.current}
+                    />
+                    <GroundRow
+                      title="Batters"
+                      players={team.selectedPlayers.filter(p => p?.role === "BAT")}
+                      team={team}
+                      statsMap={statsMap.current}
+                      playerRoleMap={playerRoleMap.current}
+                    />
+                    <GroundRow
+                      title="All-Rounders"
+                      players={team.selectedPlayers.filter(p => p?.role === "AR")}
+                      team={team}
+                      statsMap={statsMap.current}
+                      playerRoleMap={playerRoleMap.current}
+                    />
+                    <GroundRow
+                      title="Bowlers"
+                      players={team.selectedPlayers.filter(p => p?.role === "BOWL")}
+                      team={team}
+                      statsMap={statsMap.current}
+                      playerRoleMap={playerRoleMap.current}
+                    />
                   </div>
-                  <div className="absolute z-30 left-1/2 top-[32%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
-                    Batters
-                  </div>
-                  <div className="absolute z-30 left-1/2 top-[52%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
-                    All-Rounders
-                  </div>
-                  <div className="absolute z-30 left-1/2 top-[73%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
-                    Bowlers
-                  </div>
-
-                  <GroundRow
-                    title="Wicket Keeper"
-                    players={team.selectedPlayers.filter(p => p?.role === "WK")}
-                    team={team}
-                    statsMap={statsMap.current}
-                    playerRoleMap={playerRoleMap.current}
-                    positions={getPositions("WK", team.selectedPlayers.filter(p => p?.role === "WK").length)}
-                  />
-                  <GroundRow
-                    title="Batters"
-                    players={team.selectedPlayers.filter(p => p?.role === "BAT")}
-                    team={team}
-                    statsMap={statsMap.current}
-                    playerRoleMap={playerRoleMap.current}
-                    positions={getPositions("BAT", team.selectedPlayers.filter(p => p?.role === "BAT").length)}
-                  />
-                  <GroundRow
-                    title="All Rounders"
-                    players={team.selectedPlayers.filter(p => p?.role === "AR")}
-                    team={team}
-                    statsMap={statsMap.current}
-                    playerRoleMap={playerRoleMap.current}
-                    positions={getPositions("AR", team.selectedPlayers.filter(p => p?.role === "AR").length)}
-                  />
-                  <GroundRow
-                    title="Bowlers"
-                    players={team.selectedPlayers.filter(p => p?.role === "BOWL")}
-                    team={team}
-                    statsMap={statsMap.current}
-                    playerRoleMap={playerRoleMap.current}
-                    positions={getPositions("BOWL", team.selectedPlayers.filter(p => p?.role === "BOWL").length)}
-                  />
               </div>
               </div>
             </div>
@@ -202,136 +187,30 @@ function SummaryCard({
   );
 }
 
-type PlayerPosition = { top: number; left: number };
-
-const getPositions = (role: PlayerRole, count: number): PlayerPosition[] => {
-  if (role === "WK") {
-    if (count <= 1) return [{ top: 20, left: 50 }];
-    if (count === 2)
-      return [
-        { top: 20, left: 37 },
-        { top: 20, left: 63 },
-      ];
-    if (count === 3)
-      return [
-        { top: 20, left: 25 },
-        { top: 20, left: 50 },
-        { top: 20, left: 75 },
-      ];
-    return [
-      { top: 20, left: 18 },
-      { top: 20, left: 40 },
-      { top: 20, left: 60 },
-      { top: 20, left: 82 },
-    ];
-  }
-  if (role === "BAT") {
-    if (count <= 1) return [{ top: 41, left: 50 }];
-    if (count === 2) return [{ top: 41, left: 36 }, { top: 41, left: 64 }];
-    if (count === 3)
-      return [
-        { top: 41, left: 22 },
-        { top: 41, left: 50 },
-        { top: 41, left: 78 },
-      ];
-    if (count === 4)
-      return [
-        { top: 41, left: 18 },
-        { top: 41, left: 40 },
-        { top: 41, left: 60 },
-        { top: 41, left: 82 },
-      ];
-    if (count === 5)
-      return [
-        { top: 39, left: 18 },
-        { top: 39, left: 41 },
-        { top: 39, left: 64 },
-        { top: 46, left: 34 },
-        { top: 46, left: 66 },
-      ];
-    return [
-      { top: 39, left: 18 },
-      { top: 39, left: 41 },
-      { top: 39, left: 64 },
-      { top: 46, left: 26 },
-      { top: 46, left: 50 },
-      { top: 46, left: 74 },
-    ];
-  }
-  if (role === "AR") {
-    if (count <= 1) return [{ top: 61, left: 50 }];
-    if (count === 2)
-      return [
-        { top: 61, left: 36 },
-        { top: 61, left: 64 },
-      ];
-    if (count === 3)
-      return [
-        { top: 61, left: 25 },
-        { top: 61, left: 50 },
-        { top: 61, left: 75 },
-      ];
-    return [
-      { top: 61, left: 18 },
-      { top: 61, left: 40 },
-      { top: 61, left: 60 },
-      { top: 61, left: 82 },
-    ];
-  }
-  if (count <= 1) return [{ top: 82, left: 50 }];
-  if (count === 2) return [{ top: 82, left: 40 }, { top: 82, left: 60 }];
-  if (count === 3)
-    return [
-      { top: 82, left: 26 },
-      { top: 82, left: 50 },
-      { top: 82, left: 74 },
-    ];
-  if (count === 4)
-    return [
-      { top: 82, left: 18 },
-      { top: 82, left: 40 },
-      { top: 82, left: 60 },
-      { top: 82, left: 82 },
-    ];
-  if (count === 5)
-    return [
-      { top: 80, left: 18 },
-      { top: 80, left: 41 },
-      { top: 80, left: 64 },
-      { top: 87, left: 34 },
-      { top: 87, left: 66 },
-    ];
-  return [
-    { top: 80, left: 18 },
-    { top: 80, left: 41 },
-    { top: 80, left: 64 },
-    { top: 87, left: 26 },
-    { top: 87, left: 50 },
-    { top: 87, left: 74 },
-  ];
-};
-
 function GroundRow({
   title,
   players,
   team,
   statsMap,
   playerRoleMap,
-  positions,
 }: {
   title: string;
   players: Array<Player | undefined>;
   team: ReturnType<typeof useTeam>;
   statsMap: Map<string, any>;
   playerRoleMap: Map<string, PlayerRole>;
-  positions: PlayerPosition[];
 }) {
   const validPlayers = players.filter(Boolean);
   if (validPlayers.length === 0) return null;
+  const dense = validPlayers.length >= 5;
 
   return (
-    <div className="absolute inset-0 pointer-events-none">
-      {validPlayers.map((player, idx) => {
+    <div className="flex flex-col items-center gap-2 text-center">
+      <div className="text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
+        {title}
+      </div>
+      <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+        {validPlayers.map(player => {
           const id = player!.id;
           const role: PlayerRole = playerRoleMap.get(id) || player!.role;
           const matches = (statsMap as any).get(id) || [];
@@ -346,20 +225,14 @@ function GroundRow({
           const multiplier = isCaptain ? 2 : isVice ? 1.5 : 1;
           const total =
             Math.round(breakdown.basePoints * multiplier) + breakdown.motmBonus;
-          const pos = positions[idx] || positions[positions.length - 1];
           return (
             <div
               key={id}
-              className="absolute z-10 flex flex-col items-center gap-0.5"
-              style={{
-                top: `${pos.top}%`,
-                left: `${pos.left}%`,
-                transform: "translate(-50%, -50%)",
-                width: "clamp(56px, 14vw, 68px)",
-              }}
+              className="flex flex-col items-center gap-0.5"
+              style={{ width: dense ? "clamp(52px, 12vw, 62px)" : "clamp(56px, 14vw, 68px)" }}
             >
               <div className="relative">
-                <div className="h-[clamp(36px,9vw,44px)] w-[clamp(36px,9vw,44px)] rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+                <div className="h-[clamp(34px,8.5vw,42px)] w-[clamp(34px,8.5vw,42px)] rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shadow-[0_0_12px_rgba(16,185,129,0.2)]">
                   <img
                     src="/player-silhouette.svg"
                     alt={player!.name}
@@ -377,7 +250,7 @@ function GroundRow({
                   </span>
                 )}
               </div>
-              <div className="text-[clamp(9px,2.2vw,11px)] font-medium text-white text-center max-w-[72px] sm:max-w-[84px] leading-tight line-clamp-2">
+              <div className="text-[clamp(8.5px,2vw,10px)] font-medium text-white text-center max-w-[70px] leading-tight line-clamp-2">
                 {player!.name}
               </div>
               <div className="rounded-full bg-white/10 border border-white/15 px-2 py-0.5 text-[clamp(8px,2vw,10px)] text-slate-200">
@@ -389,6 +262,7 @@ function GroundRow({
             </div>
           );
         })}
+      </div>
     </div>
   );
 }

@@ -28,8 +28,6 @@ export default function TeamPage() {
   const [showAutoLockToast, setShowAutoLockToast] = useState(false);
   const lockTipRef = useRef<HTMLButtonElement | null>(null);
   const fieldWrapRef = useRef<HTMLDivElement | null>(null);
-  const fieldRef = useRef<HTMLDivElement | null>(null);
-  const [fieldScale, setFieldScale] = useState(1);
 
   const playerRoleMap = useRef(
     new Map(players.map(player => [player.id, player.role] as const))
@@ -72,22 +70,6 @@ export default function TeamPage() {
     return () => clearTimeout(timeout);
   }, [tournament.nextMatch, tournament.now]);
 
-  useEffect(() => {
-    const computeScale = () => {
-      if (!fieldWrapRef.current || !fieldRef.current) return;
-      const wrap = fieldWrapRef.current.getBoundingClientRect();
-      const field = fieldRef.current.getBoundingClientRect();
-      if (field.height === 0 || field.width === 0) return;
-      const heightScale = wrap.height / field.height;
-      const widthScale = wrap.width / field.width;
-      const nextScale = Math.min(heightScale, widthScale);
-      setFieldScale(Number.isFinite(nextScale) ? nextScale : 1);
-    };
-    computeScale();
-    window.addEventListener("resize", computeScale);
-    return () => window.removeEventListener("resize", computeScale);
-  }, [team.selectedPlayers.length]);
-
   const lockLabel = tournament.lockWindowMatch
     ? `Locked for Match #${tournament.lockWindowMatch.matchId} until ${new Date(
         tournament.lockWindowEndsAt || Date.now()
@@ -99,10 +81,7 @@ export default function TeamPage() {
       <div className="max-w-6xl mx-auto space-y-3">
         <div className="h-0" />
 
-        <div
-          className="space-y-3 h-[calc(100vh-140px)] sm:h-auto"
-          ref={fieldWrapRef}
-        >
+        <div className="space-y-3" ref={fieldWrapRef}>
           {team.selectedPlayers.length === 0 && (
             <div className="text-sm text-slate-400 border border-white/10 rounded-xl p-4">
               No players selected yet. Head to Edit Team to build your XI.
@@ -110,44 +89,62 @@ export default function TeamPage() {
           )}
 
           {team.selectedPlayers.length > 0 && (
-            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.35),rgba(15,23,42,0.9))] p-3 sm:p-5">
-              <div className="absolute inset-0 opacity-30">
-                <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(16,185,129,0.12)_0,rgba(16,185,129,0.12)_18px,rgba(16,185,129,0.22)_18px,rgba(16,185,129,0.22)_36px)]" />
-                <div className="absolute left-1/2 top-6 h-[70%] w-[70%] -translate-x-1/2 rounded-full border border-white/10" />
-                <div className="absolute left-1/2 top-24 h-14 w-28 -translate-x-1/2 rounded-full border border-white/10" />
-                <div className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10" />
-              </div>
-              <div
-                ref={fieldRef}
-                className="relative origin-top"
-                style={{ transform: `scale(${fieldScale})` }}
-              >
-                <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-200 mb-1">
-                  <span className="font-semibold truncate max-w-[55%]">
-                    {teamName}
-                  </span>
-                  <div className="flex gap-3 text-[10px] sm:text-[11px]">
-                    <Link href="/" className="text-indigo-200 hover:underline">
-                      Home
-                    </Link>
-                    {team.isEditLocked ? (
-                      <span className="text-slate-400">Edit Team (Locked)</span>
-                    ) : (
-                      <Link
-                        href="/team/edit"
-                        className="text-indigo-200 hover:underline"
-                      >
-                        Edit Team
-                      </Link>
-                    )}
+            <div className="relative mx-auto w-full max-w-[440px]">
+              <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.35),rgba(15,23,42,0.9))] p-2">
+                <div className="relative w-full aspect-[9/16] rounded-[22px] overflow-hidden bg-[linear-gradient(180deg,rgba(16,96,65,0.9),rgba(7,35,25,0.95))]">
+                  <div className="absolute inset-0 opacity-30">
+                    <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(16,185,129,0.12)_0,rgba(16,185,129,0.12)_4%,rgba(16,185,129,0.22)_4%,rgba(16,185,129,0.22)_8%)]" />
+                    <div className="absolute left-1/2 top-[6%] h-[75%] w-[75%] -translate-x-1/2 rounded-full border border-white/10" />
+                    <div className="absolute left-1/2 top-[16%] h-[10%] w-[24%] -translate-x-1/2 rounded-full border border-white/10" />
+                    <div className="absolute left-1/2 top-1/2 h-[18%] w-[18%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10" />
                   </div>
-                </div>
+
+                  <div className="absolute top-[3%] left-[4%] right-[4%] flex items-center justify-between text-[10px] sm:text-[11px] text-slate-100">
+                    <span className="font-semibold truncate max-w-[55%]">
+                      {teamName}
+                    </span>
+                    <div className="flex gap-2">
+                      <Link
+                        href="/"
+                        className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] sm:text-[11px] text-slate-100"
+                      >
+                        Home
+                      </Link>
+                      {team.isEditLocked ? (
+                        <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] sm:text-[11px] text-slate-400">
+                          Locked
+                        </span>
+                      ) : (
+                        <Link
+                          href="/team/edit"
+                          className="rounded-full border border-white/15 bg-indigo-500/60 px-2.5 py-1 text-[10px] sm:text-[11px] text-white"
+                        >
+                          Edit
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="absolute left-1/2 top-[12%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70">
+                    Wicket Keepers
+                  </div>
+                  <div className="absolute left-1/2 top-[34%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70">
+                    Batters
+                  </div>
+                  <div className="absolute left-1/2 top-[56%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70">
+                    All-Rounders
+                  </div>
+                  <div className="absolute left-1/2 top-[78%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70">
+                    Bowlers
+                  </div>
+
                 <GroundRow
                   title="Wicket Keeper"
                   players={team.selectedPlayers.filter(p => p?.role === "WK")}
                   team={team}
                   statsMap={statsMap.current}
                   playerRoleMap={playerRoleMap.current}
+                  positions={getPositions("WK", team.selectedPlayers.filter(p => p?.role === "WK").length)}
                 />
                 <GroundRow
                   title="Batters"
@@ -155,6 +152,7 @@ export default function TeamPage() {
                   team={team}
                   statsMap={statsMap.current}
                   playerRoleMap={playerRoleMap.current}
+                  positions={getPositions("BAT", team.selectedPlayers.filter(p => p?.role === "BAT").length)}
                 />
                 <GroundRow
                   title="All Rounders"
@@ -162,6 +160,7 @@ export default function TeamPage() {
                   team={team}
                   statsMap={statsMap.current}
                   playerRoleMap={playerRoleMap.current}
+                  positions={getPositions("AR", team.selectedPlayers.filter(p => p?.role === "AR").length)}
                 />
                 <GroundRow
                   title="Bowlers"
@@ -169,7 +168,9 @@ export default function TeamPage() {
                   team={team}
                   statsMap={statsMap.current}
                   playerRoleMap={playerRoleMap.current}
+                  positions={getPositions("BOWL", team.selectedPlayers.filter(p => p?.role === "BOWL").length)}
                 />
+              </div>
               </div>
             </div>
           )}
@@ -201,29 +202,76 @@ function SummaryCard({
   );
 }
 
+type PlayerPosition = { top: number; left: number };
+
+const getPositions = (role: PlayerRole, count: number): PlayerPosition[] => {
+  if (role === "WK") {
+    if (count <= 1) return [{ top: 18, left: 50 }];
+    return [
+      { top: 18, left: 38 },
+      { top: 18, left: 62 },
+    ];
+  }
+  if (role === "BAT") {
+    if (count <= 1) return [{ top: 40, left: 50 }];
+    if (count === 2) return [{ top: 38, left: 38 }, { top: 38, left: 62 }];
+    if (count === 3)
+      return [
+        { top: 38, left: 25 },
+        { top: 38, left: 50 },
+        { top: 38, left: 75 },
+      ];
+    return [
+      { top: 36, left: 20 },
+      { top: 36, left: 40 },
+      { top: 36, left: 60 },
+      { top: 36, left: 80 },
+    ];
+  }
+  if (role === "AR") {
+    if (count <= 1) return [{ top: 58, left: 50 }];
+    return [
+      { top: 58, left: 38 },
+      { top: 58, left: 62 },
+    ];
+  }
+  if (count <= 1) return [{ top: 88, left: 50 }];
+  if (count === 2) return [{ top: 80, left: 40 }, { top: 80, left: 60 }];
+  if (count === 3)
+    return [
+      { top: 80, left: 30 },
+      { top: 80, left: 50 },
+      { top: 80, left: 70 },
+    ];
+  return [
+    { top: 80, left: 20 },
+    { top: 80, left: 40 },
+    { top: 80, left: 60 },
+    { top: 80, left: 80 },
+  ];
+};
+
 function GroundRow({
   title,
   players,
   team,
   statsMap,
   playerRoleMap,
+  positions,
 }: {
   title: string;
   players: Array<Player | undefined>;
   team: ReturnType<typeof useTeam>;
   statsMap: Map<string, any>;
   playerRoleMap: Map<string, PlayerRole>;
+  positions: PlayerPosition[];
 }) {
   const validPlayers = players.filter(Boolean);
   if (validPlayers.length === 0) return null;
 
   return (
-    <div className="mb-3 sm:mb-4">
-      <div className="text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70 mb-1.5 text-center">
-        {title}
-      </div>
-      <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
-        {validPlayers.map(player => {
+    <div className="absolute inset-0 pointer-events-none">
+      {validPlayers.map((player, idx) => {
           const id = player!.id;
           const role: PlayerRole = playerRoleMap.get(id) || player!.role;
           const matches = (statsMap as any).get(id) || [];
@@ -238,10 +286,20 @@ function GroundRow({
           const multiplier = isCaptain ? 2 : isVice ? 1.5 : 1;
           const total =
             Math.round(breakdown.basePoints * multiplier) + breakdown.motmBonus;
+          const pos = positions[idx] || positions[positions.length - 1];
           return (
-            <div key={id} className="flex flex-col items-center gap-0.5">
+            <div
+              key={id}
+              className="absolute flex flex-col items-center gap-0.5"
+              style={{
+                top: `${pos.top}%`,
+                left: `${pos.left}%`,
+                transform: "translate(-50%, -50%)",
+                width: "clamp(56px, 14vw, 68px)",
+              }}
+            >
               <div className="relative">
-                <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+                <div className="h-[clamp(36px,9vw,44px)] w-[clamp(36px,9vw,44px)] rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shadow-[0_0_12px_rgba(16,185,129,0.2)]">
                   <img
                     src="/player-silhouette.svg"
                     alt={player!.name}
@@ -259,19 +317,18 @@ function GroundRow({
                   </span>
                 )}
               </div>
-              <div className="text-[9px] sm:text-[10px] font-medium text-white text-center max-w-[70px] sm:max-w-[84px] truncate">
+              <div className="text-[clamp(9px,2.2vw,11px)] font-medium text-white text-center max-w-[84px] truncate">
                 {player!.name}
               </div>
-              <div className="rounded-full bg-white/10 border border-white/15 px-2 py-0.5 text-[8px] sm:text-[9px] text-slate-200">
+              <div className="rounded-full bg-white/10 border border-white/15 px-2 py-0.5 text-[clamp(8px,2vw,10px)] text-slate-200">
                 {player!.credit} cr
               </div>
-              <div className="text-[8px] sm:text-[9px] text-slate-300">
+              <div className="text-[clamp(8px,1.9vw,10px)] text-slate-300">
                 {total} pts
               </div>
             </div>
           );
         })}
-      </div>
     </div>
   );
 }

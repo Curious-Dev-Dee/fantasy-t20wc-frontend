@@ -125,51 +125,51 @@ export default function TeamPage() {
                     </div>
                   </div>
 
-                  <div className="absolute left-1/2 top-[9%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70">
+                  <div className="absolute left-1/2 top-[9%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/80 bg-black/20 px-2 py-0.5 rounded-full">
                     Wicket Keepers
                   </div>
-                  <div className="absolute left-1/2 top-[31%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70">
+                  <div className="absolute left-1/2 top-[30%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/80 bg-black/20 px-2 py-0.5 rounded-full">
                     Batters
                   </div>
-                  <div className="absolute left-1/2 top-[53%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70">
+                  <div className="absolute left-1/2 top-[50.5%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/80 bg-black/20 px-2 py-0.5 rounded-full">
                     All-Rounders
                   </div>
-                  <div className="absolute left-1/2 top-[75%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70">
+                  <div className="absolute left-1/2 top-[72%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/80 bg-black/20 px-2 py-0.5 rounded-full">
                     Bowlers
                   </div>
 
-                <GroundRow
-                  title="Wicket Keeper"
-                  players={team.selectedPlayers.filter(p => p?.role === "WK")}
-                  team={team}
-                  statsMap={statsMap.current}
-                  playerRoleMap={playerRoleMap.current}
-                  positions={getPositions("WK", team.selectedPlayers.filter(p => p?.role === "WK").length)}
-                />
-                <GroundRow
-                  title="Batters"
-                  players={team.selectedPlayers.filter(p => p?.role === "BAT")}
-                  team={team}
-                  statsMap={statsMap.current}
-                  playerRoleMap={playerRoleMap.current}
-                  positions={getPositions("BAT", team.selectedPlayers.filter(p => p?.role === "BAT").length)}
-                />
-                <GroundRow
-                  title="All Rounders"
-                  players={team.selectedPlayers.filter(p => p?.role === "AR")}
-                  team={team}
-                  statsMap={statsMap.current}
-                  playerRoleMap={playerRoleMap.current}
-                  positions={getPositions("AR", team.selectedPlayers.filter(p => p?.role === "AR").length)}
-                />
-                <GroundRow
-                  title="Bowlers"
-                  players={team.selectedPlayers.filter(p => p?.role === "BOWL")}
-                  team={team}
-                  statsMap={statsMap.current}
-                  playerRoleMap={playerRoleMap.current}
-                  positions={getPositions("BOWL", team.selectedPlayers.filter(p => p?.role === "BOWL").length)}
-                />
+                  <GroundRow
+                    title="Wicket Keeper"
+                    players={team.selectedPlayers.filter(p => p?.role === "WK")}
+                    team={team}
+                    statsMap={statsMap.current}
+                    playerRoleMap={playerRoleMap.current}
+                    positions={getPositions("WK", team.selectedPlayers.filter(p => p?.role === "WK").length)}
+                  />
+                  <GroundRow
+                    title="Batters"
+                    players={team.selectedPlayers.filter(p => p?.role === "BAT")}
+                    team={team}
+                    statsMap={statsMap.current}
+                    playerRoleMap={playerRoleMap.current}
+                    positions={getPositions("BAT", team.selectedPlayers.filter(p => p?.role === "BAT").length)}
+                  />
+                  <GroundRow
+                    title="All Rounders"
+                    players={team.selectedPlayers.filter(p => p?.role === "AR")}
+                    team={team}
+                    statsMap={statsMap.current}
+                    playerRoleMap={playerRoleMap.current}
+                    positions={getPositions("AR", team.selectedPlayers.filter(p => p?.role === "AR").length)}
+                  />
+                  <GroundRow
+                    title="Bowlers"
+                    players={team.selectedPlayers.filter(p => p?.role === "BOWL")}
+                    team={team}
+                    statsMap={statsMap.current}
+                    playerRoleMap={playerRoleMap.current}
+                    positions={getPositions("BOWL", team.selectedPlayers.filter(p => p?.role === "BOWL").length)}
+                  />
               </div>
               </div>
             </div>
@@ -207,9 +207,22 @@ type PlayerPosition = { top: number; left: number };
 const getPositions = (role: PlayerRole, count: number): PlayerPosition[] => {
   if (role === "WK") {
     if (count <= 1) return [{ top: 19, left: 50 }];
+    if (count === 2)
+      return [
+        { top: 19, left: 37 },
+        { top: 19, left: 63 },
+      ];
+    if (count === 3)
+      return [
+        { top: 19, left: 25 },
+        { top: 19, left: 50 },
+        { top: 19, left: 75 },
+      ];
     return [
-      { top: 19, left: 37 },
-      { top: 19, left: 63 },
+      { top: 18, left: 20 },
+      { top: 18, left: 40 },
+      { top: 18, left: 60 },
+      { top: 18, left: 80 },
     ];
   }
   if (role === "BAT") {
@@ -221,18 +234,48 @@ const getPositions = (role: PlayerRole, count: number): PlayerPosition[] => {
         { top: 38, left: 50 },
         { top: 38, left: 78 },
       ];
+    if (count === 4)
+      return [
+        { top: 36, left: 18 },
+        { top: 36, left: 40 },
+        { top: 36, left: 60 },
+        { top: 36, left: 82 },
+      ];
+    if (count === 5)
+      return [
+        { top: 34, left: 18 },
+        { top: 34, left: 41 },
+        { top: 34, left: 64 },
+        { top: 42, left: 34 },
+        { top: 42, left: 66 },
+      ];
     return [
-      { top: 36, left: 18 },
-      { top: 36, left: 40 },
-      { top: 36, left: 60 },
-      { top: 36, left: 82 },
+      { top: 34, left: 18 },
+      { top: 34, left: 41 },
+      { top: 34, left: 64 },
+      { top: 42, left: 26 },
+      { top: 42, left: 50 },
+      { top: 42, left: 74 },
     ];
   }
   if (role === "AR") {
     if (count <= 1) return [{ top: 58, left: 50 }];
+    if (count === 2)
+      return [
+        { top: 58, left: 36 },
+        { top: 58, left: 64 },
+      ];
+    if (count === 3)
+      return [
+        { top: 56, left: 25 },
+        { top: 56, left: 50 },
+        { top: 56, left: 75 },
+      ];
     return [
-      { top: 58, left: 36 },
-      { top: 58, left: 64 },
+      { top: 56, left: 18 },
+      { top: 56, left: 40 },
+      { top: 56, left: 60 },
+      { top: 56, left: 82 },
     ];
   }
   if (count <= 1) return [{ top: 88, left: 50 }];
@@ -243,11 +286,28 @@ const getPositions = (role: PlayerRole, count: number): PlayerPosition[] => {
       { top: 80, left: 50 },
       { top: 80, left: 74 },
     ];
+  if (count === 4)
+    return [
+      { top: 80, left: 18 },
+      { top: 80, left: 40 },
+      { top: 80, left: 60 },
+      { top: 80, left: 82 },
+    ];
+  if (count === 5)
+    return [
+      { top: 78, left: 18 },
+      { top: 78, left: 41 },
+      { top: 78, left: 64 },
+      { top: 86, left: 34 },
+      { top: 86, left: 66 },
+    ];
   return [
-    { top: 80, left: 18 },
-    { top: 80, left: 40 },
-    { top: 80, left: 60 },
-    { top: 80, left: 82 },
+    { top: 78, left: 18 },
+    { top: 78, left: 41 },
+    { top: 78, left: 64 },
+    { top: 86, left: 26 },
+    { top: 86, left: 50 },
+    { top: 86, left: 74 },
   ];
 };
 
@@ -317,7 +377,7 @@ function GroundRow({
                   </span>
                 )}
               </div>
-              <div className="text-[clamp(9px,2.2vw,11px)] font-medium text-white text-center max-w-[76px] sm:max-w-[84px] truncate">
+              <div className="text-[clamp(9px,2.2vw,11px)] font-medium text-white text-center max-w-[72px] sm:max-w-[84px] leading-tight line-clamp-2">
                 {player!.name}
               </div>
               <div className="rounded-full bg-white/10 border border-white/15 px-2 py-0.5 text-[clamp(8px,2vw,10px)] text-slate-200">

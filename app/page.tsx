@@ -329,11 +329,11 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full md:w-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full md:w-auto">
               <HeroStat label="Total Score" value={String(totalScore)} />
+              <NextMatchCard label="Next Match" value={nextMatchLabel} time={nextMatchTime} />
               <HeroStat label="Subs Left" value={team.subsLeftLabel} />
-              <HeroStat label="Next Match" value={nextMatchLabel} />
-              <HeroStat label="Match Time" value={nextMatchTime} />
+              <HeroStat label="Boosters" value="Coming Soon" />
             </div>
           </div>
 
@@ -433,6 +433,26 @@ function HeroStat({ label, value }: { label: string; value: string }) {
       <div className="text-sm sm:text-base font-semibold text-white mt-1 whitespace-nowrap leading-tight">
         {value}
       </div>
+    </div>
+  );
+}
+
+function NextMatchCard({
+  label,
+  value,
+  time,
+}: {
+  label: string;
+  value: string;
+  time: string;
+}) {
+  return (
+    <div className="rounded-2xl bg-black/30 border border-white/10 px-4 py-3 text-center">
+      <div className="text-xs text-slate-400">{label}</div>
+      <div className="text-sm sm:text-base font-semibold text-white mt-1 leading-tight">
+        {value}
+      </div>
+      <div className="text-[11px] text-slate-400 mt-1">{time}</div>
     </div>
   );
 }

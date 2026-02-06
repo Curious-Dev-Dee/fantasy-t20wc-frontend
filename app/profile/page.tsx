@@ -44,8 +44,8 @@ export default function ProfilePage() {
       ...profile,
       full_name: nextFullName,
       team_name: nextTeamName,
-      full_name_edit_used: profile.full_name_edit_used || fullNameChanged,
-      team_name_edit_used: profile.team_name_edit_used || teamNameChanged,
+      full_name_edit_used: Boolean(profile.full_name_edit_used) || fullNameChanged,
+      team_name_edit_used: Boolean(profile.team_name_edit_used) || teamNameChanged,
     });
 
     setMessage("Profile updated.");

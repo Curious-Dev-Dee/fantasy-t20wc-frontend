@@ -125,16 +125,16 @@ export default function TeamPage() {
                     </div>
                   </div>
 
-                  <div className="absolute z-30 left-1/2 top-[5%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
+                  <div className="absolute z-30 left-1/2 top-[12%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
                     Wicket Keepers
                   </div>
-                  <div className="absolute z-30 left-1/2 top-[24%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
+                  <div className="absolute z-30 left-1/2 top-[32%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
                     Batters
                   </div>
-                  <div className="absolute z-30 left-1/2 top-[43%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
+                  <div className="absolute z-30 left-1/2 top-[52%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
                     All-Rounders
                   </div>
-                  <div className="absolute z-30 left-1/2 top-[63%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
+                  <div className="absolute z-30 left-1/2 top-[73%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
                     Bowlers
                   </div>
 
@@ -206,108 +206,108 @@ type PlayerPosition = { top: number; left: number };
 
 const getPositions = (role: PlayerRole, count: number): PlayerPosition[] => {
   if (role === "WK") {
-    if (count <= 1) return [{ top: 19, left: 50 }];
+    if (count <= 1) return [{ top: 20, left: 50 }];
     if (count === 2)
       return [
-        { top: 19, left: 37 },
-        { top: 19, left: 63 },
+        { top: 20, left: 37 },
+        { top: 20, left: 63 },
       ];
     if (count === 3)
       return [
-        { top: 19, left: 25 },
-        { top: 19, left: 50 },
-        { top: 19, left: 75 },
+        { top: 20, left: 25 },
+        { top: 20, left: 50 },
+        { top: 20, left: 75 },
       ];
     return [
-      { top: 18, left: 20 },
-      { top: 18, left: 40 },
-      { top: 18, left: 60 },
-      { top: 18, left: 80 },
+      { top: 20, left: 18 },
+      { top: 20, left: 40 },
+      { top: 20, left: 60 },
+      { top: 20, left: 82 },
     ];
   }
   if (role === "BAT") {
-    if (count <= 1) return [{ top: 40, left: 50 }];
-    if (count === 2) return [{ top: 38, left: 36 }, { top: 38, left: 64 }];
+    if (count <= 1) return [{ top: 41, left: 50 }];
+    if (count === 2) return [{ top: 41, left: 36 }, { top: 41, left: 64 }];
     if (count === 3)
       return [
-        { top: 38, left: 22 },
-        { top: 38, left: 50 },
-        { top: 38, left: 78 },
+        { top: 41, left: 22 },
+        { top: 41, left: 50 },
+        { top: 41, left: 78 },
       ];
     if (count === 4)
       return [
-        { top: 36, left: 18 },
-        { top: 36, left: 40 },
-        { top: 36, left: 60 },
-        { top: 36, left: 82 },
+        { top: 41, left: 18 },
+        { top: 41, left: 40 },
+        { top: 41, left: 60 },
+        { top: 41, left: 82 },
       ];
     if (count === 5)
       return [
-        { top: 34, left: 18 },
-        { top: 34, left: 41 },
-        { top: 34, left: 64 },
-        { top: 42, left: 34 },
-        { top: 42, left: 66 },
+        { top: 39, left: 18 },
+        { top: 39, left: 41 },
+        { top: 39, left: 64 },
+        { top: 46, left: 34 },
+        { top: 46, left: 66 },
       ];
     return [
-      { top: 34, left: 18 },
-      { top: 34, left: 41 },
-      { top: 34, left: 64 },
-      { top: 42, left: 26 },
-      { top: 42, left: 50 },
-      { top: 42, left: 74 },
+      { top: 39, left: 18 },
+      { top: 39, left: 41 },
+      { top: 39, left: 64 },
+      { top: 46, left: 26 },
+      { top: 46, left: 50 },
+      { top: 46, left: 74 },
     ];
   }
   if (role === "AR") {
-    if (count <= 1) return [{ top: 58, left: 50 }];
+    if (count <= 1) return [{ top: 61, left: 50 }];
     if (count === 2)
       return [
-        { top: 58, left: 36 },
-        { top: 58, left: 64 },
+        { top: 61, left: 36 },
+        { top: 61, left: 64 },
       ];
     if (count === 3)
       return [
-        { top: 56, left: 25 },
-        { top: 56, left: 50 },
-        { top: 56, left: 75 },
+        { top: 61, left: 25 },
+        { top: 61, left: 50 },
+        { top: 61, left: 75 },
       ];
     return [
-      { top: 56, left: 18 },
-      { top: 56, left: 40 },
-      { top: 56, left: 60 },
-      { top: 56, left: 82 },
+      { top: 61, left: 18 },
+      { top: 61, left: 40 },
+      { top: 61, left: 60 },
+      { top: 61, left: 82 },
     ];
   }
-  if (count <= 1) return [{ top: 88, left: 50 }];
-  if (count === 2) return [{ top: 80, left: 40 }, { top: 80, left: 60 }];
+  if (count <= 1) return [{ top: 82, left: 50 }];
+  if (count === 2) return [{ top: 82, left: 40 }, { top: 82, left: 60 }];
   if (count === 3)
     return [
-      { top: 80, left: 26 },
-      { top: 80, left: 50 },
-      { top: 80, left: 74 },
+      { top: 82, left: 26 },
+      { top: 82, left: 50 },
+      { top: 82, left: 74 },
     ];
   if (count === 4)
     return [
-      { top: 80, left: 18 },
-      { top: 80, left: 40 },
-      { top: 80, left: 60 },
-      { top: 80, left: 82 },
+      { top: 82, left: 18 },
+      { top: 82, left: 40 },
+      { top: 82, left: 60 },
+      { top: 82, left: 82 },
     ];
   if (count === 5)
     return [
-      { top: 78, left: 18 },
-      { top: 78, left: 41 },
-      { top: 78, left: 64 },
-      { top: 86, left: 34 },
-      { top: 86, left: 66 },
+      { top: 80, left: 18 },
+      { top: 80, left: 41 },
+      { top: 80, left: 64 },
+      { top: 87, left: 34 },
+      { top: 87, left: 66 },
     ];
   return [
-    { top: 78, left: 18 },
-    { top: 78, left: 41 },
-    { top: 78, left: 64 },
-    { top: 86, left: 26 },
-    { top: 86, left: 50 },
-    { top: 86, left: 74 },
+    { top: 80, left: 18 },
+    { top: 80, left: 41 },
+    { top: 80, left: 64 },
+    { top: 87, left: 26 },
+    { top: 87, left: 50 },
+    { top: 87, left: 74 },
   ];
 };
 

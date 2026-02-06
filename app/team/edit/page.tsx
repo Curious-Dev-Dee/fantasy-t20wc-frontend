@@ -531,28 +531,38 @@ export default function EditTeamPage() {
               </div>
               <div className="space-y-1">
                 <span className="text-slate-400">Match Filter</span>
-                <div className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 max-h-32 overflow-y-auto space-y-2">
-                  <label className="flex items-center gap-2 text-[11px] text-slate-200">
-                    <input
-                      type="checkbox"
-                      checked={matchFilter.length === 0}
-                      onChange={() => clearMatchFilter()}
-                    />
-                    All Matches
-                  </label>
-                  {tournament.nextMatches?.map(match => (
-                    <label
-                      key={match.matchId}
-                      className="flex items-center gap-2 text-[11px] text-slate-200"
+                <div className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2">
+                  <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
+                    <button
+                      type="button"
+                      onClick={() => clearMatchFilter()}
+                      className={`px-3 py-1 rounded-full text-[11px] border ${
+                        matchFilter.length === 0
+                          ? "bg-indigo-600/80 border-indigo-400 text-white"
+                          : "bg-white/5 border-white/10 text-slate-300"
+                      }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={matchFilter.includes(String(match.matchId))}
-                        onChange={() => toggleMatchFilter(String(match.matchId))}
-                      />
-                      M{match.matchId} {teamShort(match.teams[0])} vs {teamShort(match.teams[1])}
-                    </label>
-                  ))}
+                      All Matches
+                    </button>
+                    {tournament.nextMatches?.map(match => {
+                      const active = matchFilter.includes(String(match.matchId));
+                      return (
+                        <button
+                          key={match.matchId}
+                          type="button"
+                          onClick={() => toggleMatchFilter(String(match.matchId))}
+                          className={`px-3 py-1 rounded-full text-[11px] border ${
+                            active
+                              ? "bg-emerald-600/70 border-emerald-400 text-white"
+                              : "bg-white/5 border-white/10 text-slate-300"
+                          }`}
+                        >
+                          M{match.matchId} {teamShort(match.teams[0])} vs{" "}
+                          {teamShort(match.teams[1])}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
               <label className="space-y-1">
@@ -566,28 +576,39 @@ export default function EditTeamPage() {
               </label>
               <div className="space-y-1">
                 <span className="text-slate-400">Teams</span>
-                <div className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 max-h-32 overflow-y-auto space-y-2">
-                  <label className="flex items-center gap-2 text-[11px] text-slate-200">
-                    <input
-                      type="checkbox"
-                      checked={countryFilter.length === 0}
-                      onChange={() => clearCountryFilter()}
-                    />
-                    All Teams
-                  </label>
-                  {countries.filter(c => c !== "ALL").map(country => (
-                    <label
-                      key={country}
-                      className="flex items-center gap-2 text-[11px] text-slate-200"
+                <div className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2">
+                  <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
+                    <button
+                      type="button"
+                      onClick={() => clearCountryFilter()}
+                      className={`px-3 py-1 rounded-full text-[11px] border ${
+                        countryFilter.length === 0
+                          ? "bg-indigo-600/80 border-indigo-400 text-white"
+                          : "bg-white/5 border-white/10 text-slate-300"
+                      }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={countryFilter.includes(country)}
-                        onChange={() => toggleCountryFilter(country)}
-                      />
-                      {country}
-                    </label>
-                  ))}
+                      All Teams
+                    </button>
+                    {countries
+                      .filter(c => c !== "ALL")
+                      .map(country => {
+                        const active = countryFilter.includes(country);
+                        return (
+                          <button
+                            key={country}
+                            type="button"
+                            onClick={() => toggleCountryFilter(country)}
+                            className={`px-3 py-1 rounded-full text-[11px] border ${
+                              active
+                                ? "bg-emerald-600/70 border-emerald-400 text-white"
+                                : "bg-white/5 border-white/10 text-slate-300"
+                            }`}
+                          >
+                            {country}
+                          </button>
+                        );
+                      })}
+                  </div>
                 </div>
               </div>
               <label className="space-y-1">

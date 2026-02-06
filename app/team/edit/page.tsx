@@ -534,84 +534,113 @@ export default function EditTeamPage() {
 
       {showPreview && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl bg-[#0F1626] border border-white/10 p-6 space-y-4 shadow-[0_0_40px_rgba(15,23,42,0.6)]">
-            <h2 className="text-lg font-semibold">Confirm Changes</h2>
-
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              <SummaryCard label="Subs Used" value={String(subsUsed)} />
-              <SummaryCard label="Subs Had" value={team.subsLeftLabel} />
-              <SummaryCard label="Subs Left After" value={subsLeftAfterLabel} />
+          <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-[#0F1626] border border-white/10 p-5 space-y-4">
+            <div className="pb-2 border-b border-white/5">
+              <h2 className="text-base font-semibold">Confirm Team Changes</h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-                <div className="text-xs text-slate-300 mb-2 uppercase tracking-wide">
+            <div className="flex items-center gap-3 text-[11px] text-slate-300">
+              <span>Subs Used: <span className="text-white">{subsUsed}</span></span>
+              <span>•</span>
+              <span>
+                Subs Available:{" "}
+                <span className="text-white">
+                  {team.subsLeftLabel === "Unlimited" ? "∞" : team.subsLeftLabel}
+                </span>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div className="rounded-xl bg-white/5 p-3">
+                <div className="text-[11px] text-slate-300 uppercase tracking-wide">
                   Old Team
                 </div>
-                <div className="text-[11px] text-slate-400 mb-2">Players Out</div>
-                {playersOut.length === 0 && (
-                  <div className="text-xs text-slate-500">None</div>
+                {playersOut.length > 0 ? (
+                  <>
+                    <div className="mt-2 text-[11px] text-slate-400">Players Out</div>
+                    {playersOut.map(p => (
+                      <div key={p!.id} className="text-sm text-white">
+                        {p!.name}
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <div className="mt-2 text-[11px] text-slate-500">No changes</div>
                 )}
-                {playersOut.map(p => (
-                  <div key={p!.id} className="text-sm">
-                    {p!.name}
-                  </div>
-                ))}
-                <div className="mt-3 text-[11px] text-slate-400">Captain</div>
-                <div className="text-sm">
-                  {savedSnapshot.captainId
-                    ? playerMap.get(savedSnapshot.captainId)?.name
-                    : "Not set"}
-                </div>
-                <div className="mt-2 text-[11px] text-slate-400">Vice Captain</div>
-                <div className="text-sm">
-                  {savedSnapshot.viceCaptainId
-                    ? playerMap.get(savedSnapshot.viceCaptainId)?.name
-                    : "Not set"}
-                </div>
+                {savedSnapshot.captainId !== team.workingTeam.captainId && (
+                  <>
+                    <div className="mt-3 text-[11px] text-slate-400">Captain</div>
+                    <div className="text-sm text-white">
+                      {savedSnapshot.captainId
+                        ? playerMap.get(savedSnapshot.captainId)?.name
+                        : "Not set"}
+                    </div>
+                  </>
+                )}
+                {savedSnapshot.viceCaptainId !== team.workingTeam.viceCaptainId && (
+                  <>
+                    <div className="mt-2 text-[11px] text-slate-400">Vice Captain</div>
+                    <div className="text-sm text-white">
+                      {savedSnapshot.viceCaptainId
+                        ? playerMap.get(savedSnapshot.viceCaptainId)?.name
+                        : "Not set"}
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-                <div className="text-xs text-slate-300 mb-2 uppercase tracking-wide">
+              <div className="rounded-xl bg-white/5 p-3">
+                <div className="text-[11px] text-slate-300 uppercase tracking-wide">
                   New Team
                 </div>
-                <div className="text-[11px] text-slate-400 mb-2">Players In</div>
-                {playersIn.length === 0 && (
-                  <div className="text-xs text-slate-500">None</div>
+                {playersIn.length > 0 ? (
+                  <>
+                    <div className="mt-2 text-[11px] text-slate-400">Players In</div>
+                    {playersIn.map(p => (
+                      <div key={p!.id} className="text-sm text-white">
+                        {p!.name}
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <div className="mt-2 text-[11px] text-slate-500">No changes</div>
                 )}
-                {playersIn.map(p => (
-                  <div key={p!.id} className="text-sm">
-                    {p!.name}
-                  </div>
-                ))}
-                <div className="mt-3 text-[11px] text-slate-400">Captain</div>
-                <div className="text-sm">
-                  {team.workingTeam.captainId
-                    ? playerMap.get(team.workingTeam.captainId)?.name
-                    : "Not set"}
-                </div>
-                <div className="mt-2 text-[11px] text-slate-400">Vice Captain</div>
-                <div className="text-sm">
-                  {team.workingTeam.viceCaptainId
-                    ? playerMap.get(team.workingTeam.viceCaptainId)?.name
-                    : "Not set"}
-                </div>
+                {savedSnapshot.captainId !== team.workingTeam.captainId && (
+                  <>
+                    <div className="mt-3 text-[11px] text-slate-400">Captain</div>
+                    <div className="text-sm text-white">
+                      {team.workingTeam.captainId
+                        ? playerMap.get(team.workingTeam.captainId)?.name
+                        : "Not set"}
+                    </div>
+                  </>
+                )}
+                {savedSnapshot.viceCaptainId !== team.workingTeam.viceCaptainId && (
+                  <>
+                    <div className="mt-2 text-[11px] text-slate-400">Vice Captain</div>
+                    <div className="text-sm text-white">
+                      {team.workingTeam.viceCaptainId
+                        ? playerMap.get(team.workingTeam.viceCaptainId)?.name
+                        : "Not set"}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
-            <p className="text-xs text-slate-400">
-              Note: Your team locks for 10 minutes starting at the next match time.
+            <p className="text-[11px] text-slate-400">
+              Note: Teams lock for 10 minutes at match start.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 justify-end">
+            <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowPreview(false)}
-                className="px-4 py-2 rounded bg-slate-700 text-sm"
+                className="px-4 py-2 rounded-lg bg-white/10 text-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmSave}
-                className="px-4 py-2 rounded bg-green-600 text-sm"
+                className="px-4 py-2 rounded-lg bg-indigo-600 text-sm font-semibold"
               >
                 Confirm Save
               </button>

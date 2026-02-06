@@ -526,18 +526,35 @@ export default function EditTeamPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={event => {
-                        event.stopPropagation();
-                        team.addPlayer(player.id);
-                        highlight(player.id);
-                      }}
-                      disabled={!canAdd || selected || team.isEditLocked}
-                      className="h-7 w-7 rounded-full bg-green-600/90 text-white text-sm flex items-center justify-center disabled:opacity-50"
-                    >
-                      +
-                    </button>
+                    {selected ? (
+                      <button
+                        type="button"
+                        onClick={event => {
+                          event.stopPropagation();
+                          team.removePlayer(player.id);
+                          highlight(player.id);
+                        }}
+                        disabled={team.isEditLocked}
+                        className="h-7 w-7 rounded-full bg-red-600/90 text-white text-sm flex items-center justify-center disabled:opacity-50"
+                        aria-label="Remove player"
+                      >
+                        -
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={event => {
+                          event.stopPropagation();
+                          team.addPlayer(player.id);
+                          highlight(player.id);
+                        }}
+                        disabled={!canAdd || team.isEditLocked}
+                        className="h-7 w-7 rounded-full bg-green-600/90 text-white text-sm flex items-center justify-center disabled:opacity-50"
+                        aria-label="Add player"
+                      >
+                        +
+                      </button>
+                    )}
                   </div>
                 </div>
               );

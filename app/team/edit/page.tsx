@@ -310,7 +310,9 @@ export default function EditTeamPage() {
         <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] text-slate-200 flex flex-wrap items-center gap-2">
           <span>$ {team.totalBudget}/{team.limits.MAX_BUDGET}</span>
           <span>•</span>
-          <span>{team.teamSize}/{team.limits.MAX_PLAYERS} players</span>
+          <span>👥 {team.teamSize}/{team.limits.MAX_PLAYERS}</span>
+          <span>•</span>
+          <span>★ {team.starCount}/{team.limits.MAX_STAR_PLAYERS}</span>
           <span>•</span>
           <span>
             WK {team.roleCounts.WK} · BAT {team.roleCounts.BAT} · AR{" "}

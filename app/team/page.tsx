@@ -125,16 +125,16 @@ export default function TeamPage() {
                     </div>
                   </div>
 
-                  <div className="absolute left-1/2 top-[12%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70">
+                  <div className="absolute left-1/2 top-[9%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70">
                     Wicket Keepers
                   </div>
-                  <div className="absolute left-1/2 top-[34%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70">
+                  <div className="absolute left-1/2 top-[31%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70">
                     Batters
                   </div>
-                  <div className="absolute left-1/2 top-[56%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70">
+                  <div className="absolute left-1/2 top-[53%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70">
                     All-Rounders
                   </div>
-                  <div className="absolute left-1/2 top-[78%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70">
+                  <div className="absolute left-1/2 top-[75%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-200/70">
                     Bowlers
                   </div>
 
@@ -206,48 +206,48 @@ type PlayerPosition = { top: number; left: number };
 
 const getPositions = (role: PlayerRole, count: number): PlayerPosition[] => {
   if (role === "WK") {
-    if (count <= 1) return [{ top: 18, left: 50 }];
+    if (count <= 1) return [{ top: 19, left: 50 }];
     return [
-      { top: 18, left: 38 },
-      { top: 18, left: 62 },
+      { top: 19, left: 37 },
+      { top: 19, left: 63 },
     ];
   }
   if (role === "BAT") {
     if (count <= 1) return [{ top: 40, left: 50 }];
-    if (count === 2) return [{ top: 38, left: 38 }, { top: 38, left: 62 }];
+    if (count === 2) return [{ top: 38, left: 36 }, { top: 38, left: 64 }];
     if (count === 3)
       return [
-        { top: 38, left: 25 },
+        { top: 38, left: 22 },
         { top: 38, left: 50 },
-        { top: 38, left: 75 },
+        { top: 38, left: 78 },
       ];
     return [
-      { top: 36, left: 20 },
+      { top: 36, left: 18 },
       { top: 36, left: 40 },
       { top: 36, left: 60 },
-      { top: 36, left: 80 },
+      { top: 36, left: 82 },
     ];
   }
   if (role === "AR") {
     if (count <= 1) return [{ top: 58, left: 50 }];
     return [
-      { top: 58, left: 38 },
-      { top: 58, left: 62 },
+      { top: 58, left: 36 },
+      { top: 58, left: 64 },
     ];
   }
   if (count <= 1) return [{ top: 88, left: 50 }];
   if (count === 2) return [{ top: 80, left: 40 }, { top: 80, left: 60 }];
   if (count === 3)
     return [
-      { top: 80, left: 30 },
+      { top: 80, left: 26 },
       { top: 80, left: 50 },
-      { top: 80, left: 70 },
+      { top: 80, left: 74 },
     ];
   return [
-    { top: 80, left: 20 },
+    { top: 80, left: 18 },
     { top: 80, left: 40 },
     { top: 80, left: 60 },
-    { top: 80, left: 80 },
+    { top: 80, left: 82 },
   ];
 };
 
@@ -317,7 +317,7 @@ function GroundRow({
                   </span>
                 )}
               </div>
-              <div className="text-[clamp(9px,2.2vw,11px)] font-medium text-white text-center max-w-[84px] truncate">
+              <div className="text-[clamp(9px,2.2vw,11px)] font-medium text-white text-center max-w-[76px] sm:max-w-[84px] truncate">
                 {player!.name}
               </div>
               <div className="rounded-full bg-white/10 border border-white/15 px-2 py-0.5 text-[clamp(8px,2vw,10px)] text-slate-200">

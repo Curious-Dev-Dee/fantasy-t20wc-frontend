@@ -125,16 +125,16 @@ export default function TeamPage() {
                     </div>
                   </div>
 
-                  <div className="absolute z-20 left-1/2 top-[7.5%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
+                  <div className="absolute z-30 left-1/2 top-[5%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
                     Wicket Keepers
                   </div>
-                  <div className="absolute z-20 left-1/2 top-[27.5%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
+                  <div className="absolute z-30 left-1/2 top-[24%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
                     Batters
                   </div>
-                  <div className="absolute z-20 left-1/2 top-[47.5%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
+                  <div className="absolute z-30 left-1/2 top-[43%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
                     All-Rounders
                   </div>
-                  <div className="absolute z-20 left-1/2 top-[69%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
+                  <div className="absolute z-30 left-1/2 top-[63%] -translate-x-1/2 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] text-emerald-100/85 bg-black/25 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
                     Bowlers
                   </div>
 
@@ -350,7 +350,7 @@ function GroundRow({
           return (
             <div
               key={id}
-              className="absolute flex flex-col items-center gap-0.5"
+              className="absolute z-10 flex flex-col items-center gap-0.5"
               style={{
                 top: `${pos.top}%`,
                 left: `${pos.left}%`,

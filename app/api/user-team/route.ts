@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { players } from "@/data/players";
 
 const LOCK_WINDOW_MS = 10 * 60 * 1000;
+const MAX_PLAYERS = 11;
 
 type WorkingTeam = {
   players: string[];
@@ -11,10 +13,48 @@ type WorkingTeam = {
 };
 
 type UserTeamPayload = {
-  team_name?: string | null;
-  working_team?: WorkingTeam | null;
-  locked_teams?: unknown | null;
-  subs_used?: number | null;
+  team_name?: unknown;
+  working_team?: unknown;
+};
+
+const VALID_PLAYER_IDS = new Set(players.map(player => player.id));
+
+const sanitizeWorkingTeam = (value: unknown): WorkingTeam | null => {
+  if (value === null) return null;
+  if (!value || typeof value !== "object") return null;
+
+  const row = value as {
+    players?: unknown;
+    captainId?: unknown;
+    viceCaptainId?: unknown;
+  };
+
+  const rawPlayers = Array.isArray(row.players) ? row.players : [];
+  const cleanedPlayers = Array.from(
+    new Set(
+      rawPlayers.filter(
+        playerId =>
+          typeof playerId === "string" && VALID_PLAYER_IDS.has(playerId)
+      )
+    )
+  ).slice(0, MAX_PLAYERS);
+
+  const captainId =
+    typeof row.captainId === "string" && cleanedPlayers.includes(row.captainId)
+      ? row.captainId
+      : null;
+  const viceCaptainId =
+    typeof row.viceCaptainId === "string" &&
+    cleanedPlayers.includes(row.viceCaptainId) &&
+    row.viceCaptainId !== captainId
+      ? row.viceCaptainId
+      : null;
+
+  return {
+    players: cleanedPlayers,
+    captainId,
+    viceCaptainId,
+  };
 };
 
 const getSupabaseClients = () => {
@@ -29,12 +69,12 @@ const getSupabaseClients = () => {
 };
 
 const isWithinLockWindow = async (
-  admin: SupabaseClient<any, any, any, any, any>
+  admin: SupabaseClient
 ) => {
   const { data: rows, error } = await admin.from("fixtures").select("*");
   if (error) throw error;
   const now = Date.now();
-  return (rows || []).some((row: any) => {
+  return (rows || []).some((row: Record<string, string | null>) => {
     const startTime =
       row.start_time_utc ??
       row.startTimeUTC ??
@@ -121,18 +161,48 @@ export async function POST(req: NextRequest) {
   }
 
   const body = (await req.json().catch(() => ({}))) as UserTeamPayload;
-  const payload: UserTeamPayload = {
-    team_name: body.team_name ?? null,
-    working_team: body.working_team ?? null,
-    locked_teams: body.locked_teams ?? null,
-    subs_used: typeof body.subs_used === "number" ? body.subs_used : null,
+  const hasTeamName = Object.prototype.hasOwnProperty.call(body, "team_name");
+  const hasWorkingTeam = Object.prototype.hasOwnProperty.call(body, "working_team");
+
+  if (!hasTeamName && !hasWorkingTeam) {
+    return NextResponse.json({ ok: true, ignored: true });
+  }
+
+  const updateRow: {
+    user_id: string;
+    updated_at: string;
+    team_name?: string | null;
+    working_team?: WorkingTeam | null;
+  } = {
+    user_id: user.id,
+    updated_at: new Date().toISOString(),
   };
 
-  const { error } = await clients.admin.from("user_teams").upsert({
-    user_id: user.id,
-    ...payload,
-    updated_at: new Date().toISOString(),
-  });
+  if (hasTeamName) {
+    if (body.team_name === null) {
+      updateRow.team_name = null;
+    } else if (typeof body.team_name === "string") {
+      updateRow.team_name = body.team_name.trim();
+    } else {
+      return NextResponse.json(
+        { ok: false, error: "Invalid team_name" },
+        { status: 400 }
+      );
+    }
+  }
+
+  if (hasWorkingTeam) {
+    const parsed = sanitizeWorkingTeam(body.working_team);
+    if (body.working_team !== null && parsed === null) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid working_team" },
+        { status: 400 }
+      );
+    }
+    updateRow.working_team = parsed;
+  }
+
+  const { error } = await clients.admin.from("user_teams").upsert(updateRow);
 
   if (error) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });

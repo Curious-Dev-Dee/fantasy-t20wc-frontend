@@ -507,7 +507,17 @@ set search_path = public
 as $$
 declare
   match_start timestamptz;
+  auth_user uuid;
 begin
+  auth_user := auth.uid();
+  if auth_user is null then
+    raise exception 'Authentication required';
+  end if;
+
+  if p_user_id is distinct from auth_user then
+    raise exception 'Cannot lock team for another user';
+  end if;
+
   select start_time_utc into match_start
   from public.fixtures
   where match_id = p_match_id;
@@ -529,19 +539,14 @@ begin
     subs_used
   )
   values (
-    p_user_id,
+    auth_user,
     p_match_id,
     p_players,
     p_captain_id,
     p_vice_captain_id,
     p_subs_used
   )
-  on conflict (user_id, match_id) do update set
-    players = excluded.players,
-    captain_id = excluded.captain_id,
-    vice_captain_id = excluded.vice_captain_id,
-    subs_used = excluded.subs_used,
-    locked_at = now();
+  on conflict (user_id, match_id) do nothing;
 
   insert into public.locked_team_public (
     user_id,
@@ -552,19 +557,14 @@ begin
     subs_used
   )
   values (
-    p_user_id,
+    auth_user,
     p_match_id,
     p_players,
     p_captain_id,
     p_vice_captain_id,
     p_subs_used
   )
-  on conflict (user_id, match_id) do update set
-    players = excluded.players,
-    captain_id = excluded.captain_id,
-    vice_captain_id = excluded.vice_captain_id,
-    subs_used = excluded.subs_used,
-    locked_at = now();
+  on conflict (user_id, match_id) do nothing;
 
   return true;
 end;

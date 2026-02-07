@@ -29,6 +29,13 @@ type UserTeamRow = {
   subs_used: number | null;
 };
 
+type FixtureRow = {
+  match_id?: number | null;
+  matchId?: number | null;
+  start_time_utc?: string | null;
+  startTimeUTC?: string | null;
+};
+
 const getSubsCap = (matchId: number) => {
   if (matchId === 1 || matchId === 41 || matchId === 53) return Infinity;
   if (matchId <= 40) return MAX_SUBS.GROUP_AFTER_MATCH1;
@@ -90,7 +97,7 @@ Deno.serve(async () => {
 
     if (fixtureError) throw fixtureError;
 
-    const allFixtures = (fixtureRows || []).map((row: any) => ({
+    const allFixtures = ((fixtureRows || []) as FixtureRow[]).map(row => ({
       matchId: row.match_id ?? row.matchId,
       startTimeUTC: row.start_time_utc ?? row.startTimeUTC,
     })) as Array<{ matchId: number; startTimeUTC: string }>;

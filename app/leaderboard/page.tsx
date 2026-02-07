@@ -8,7 +8,7 @@ import { useMatchStats } from "@/hooks/useMatchStats";
 import { players } from "@/data/players";
 import { teamShort } from "@/utils/teamCodes";
 import { useTournament } from "@/hooks/useTournament";
-import { getJSON, setJSON } from "@/utils/storage";
+import { getJSON } from "@/utils/storage";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchLeaderboardTeams } from "@/utils/leaderboardPersistence";
 import { fetchAllLockHistory, type LockedHistoryRow } from "@/utils/lockHistoryPersistence";
@@ -29,12 +29,27 @@ type LeagueDetail = {
   entries: LeagueEntry[];
 };
 
+type LeaderboardWorkingTeam = {
+  players?: string[];
+  captainId?: string | null;
+  viceCaptainId?: string | null;
+};
+
+type MemberTeamRow = {
+  user_id: string;
+  working_team: LeaderboardWorkingTeam | null;
+};
+
 export default function LeaderboardPage() {
   const tournament = useTournament();
   const myTeam = useTeam();
-  const [leaderboardTeams, setLeaderboardTeams] = useState<LeaderboardTeam[]>(
-    baseLeaderboardTeams
-  );
+  const [leaderboardTeams] = useState<LeaderboardTeam[]>(() => {
+    const saved = getJSON<LeaderboardTeam[] | null>("fantasy_leaderboard", null);
+    if (saved && Array.isArray(saved) && saved.length > 0) {
+      return saved;
+    }
+    return baseLeaderboardTeams;
+  });
   const { stats, refresh, isRefreshing } = useMatchStats();
   const { user, ready, isConfigured } = useAuth();
   const [remoteTeams, setRemoteTeams] = useState<LeaderboardTeam[] | null>(null);
@@ -75,12 +90,6 @@ export default function LeaderboardPage() {
       return;
     }
 
-    const saved = getJSON<LeaderboardTeam[] | null>("fantasy_leaderboard", null);
-    if (saved && Array.isArray(saved) && saved.length > 0) {
-      setLeaderboardTeams(saved);
-      return;
-    }
-    setJSON("fantasy_leaderboard", baseLeaderboardTeams);
   }, [ready, user, isConfigured]);
 
   useEffect(() => {
@@ -100,17 +109,14 @@ export default function LeaderboardPage() {
       for (const league of leagues) {
         const members = await fetchLeagueMembers(league.id);
         const memberIds = members.map(member => member.user_id);
-        let memberTeams: Array<{
-          user_id: string;
-          working_team: any;
-        }> = [];
-        let memberNameMap = new Map<string, string>();
+        let memberTeams: MemberTeamRow[] = [];
+        const memberNameMap = new Map<string, string>();
         if (memberIds.length > 0 && supabase) {
           const { data } = await supabase
             .from("user_teams")
             .select("user_id, working_team")
             .in("user_id", memberIds);
-          memberTeams = (data as any[]) || [];
+          memberTeams = (data as unknown as MemberTeamRow[]) || [];
           const { data: profiles } = await supabase
             .from("user_profiles")
             .select("user_id, team_name")

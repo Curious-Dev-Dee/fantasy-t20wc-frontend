@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { cricketDataFetch } from "@/utils/cricketdataClient";
 import { fixtures } from "@/data/fixtures";
 import { mapCricketDataScorecard, findCricketDataMatchId } from "@/utils/cricketdataMapper";
+import type { ScorecardPayload } from "@/utils/cricketdataMapper";
 
 const SCORECARD_MINUTES = 30;
 const WINDOW_BEFORE_MS = 2 * 60 * 60 * 1000;
@@ -93,10 +94,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const scorecard = await cricketDataFetch<unknown>("match_scorecard", { id: apiMatchId });
+    const scorecard = await cricketDataFetch<ScorecardPayload>("match_scorecard", { id: apiMatchId });
     if (!scorecard || scorecard.payload?.status === "failure") continue;
 
-    const stats = mapCricketDataScorecard(scorecard.payload as any, fixture.matchId);
+    const stats = mapCricketDataScorecard(scorecard.payload, fixture.matchId);
     const rows = toRows(stats, fixture.matchId);
     if (rows.length === 0) continue;
 

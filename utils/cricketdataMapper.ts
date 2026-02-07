@@ -40,7 +40,7 @@ const ensureMatch = (map: Map<string, MatchStats>, playerId: string, matchId: nu
   return next;
 };
 
-type ScorecardPayload = {
+export type ScorecardPayload = {
   data?: {
     scorecard?: Array<{
       batting?: Array<{

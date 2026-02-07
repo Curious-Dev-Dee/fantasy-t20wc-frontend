@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
@@ -184,9 +185,12 @@ export default function ProfilePage() {
             </div>
           </div>
           {photoPreview && (
-            <img
+            <Image
               src={photoPreview}
               alt="Team preview"
+              width={64}
+              height={64}
+              unoptimized
               className="h-16 w-16 rounded-full border border-white/10 object-cover"
             />
           )}

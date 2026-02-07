@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { leaderboardTeams as baseLeaderboardTeams, LeaderboardTeam } from "@/data/leaderboard";
 import { players, type Player } from "@/data/players";
+import type { MatchStats } from "@/data/matchStats";
 import { fixtures } from "@/data/fixtures";
 import { teamShort } from "@/utils/teamCodes";
 import { useTournament } from "@/hooks/useTournament";
@@ -28,9 +29,16 @@ import {
 export default function LeaderboardTeamPage() {
   const params = useParams<{ teamId: string }>();
   const tournament = useTournament();
-  const [leaderboardTeams, setLeaderboardTeams] =
-    useState<LeaderboardTeam[]>(baseLeaderboardTeams);
-  const [loaded, setLoaded] = useState(false);
+  const [leaderboardTeams] = useState<LeaderboardTeam[]>(() => {
+    const saved = getJSON<LeaderboardTeam[] | null>(
+      "fantasy_leaderboard",
+      null
+    );
+    if (saved && Array.isArray(saved) && saved.length > 0) {
+      return saved;
+    }
+    return baseLeaderboardTeams;
+  });
   const [showAllMatches, setShowAllMatches] = useState(true);
   const { user, ready, isConfigured } = useAuth();
   const [remoteTeams, setRemoteTeams] = useState<LeaderboardTeam[] | null>(null);
@@ -57,21 +65,13 @@ export default function LeaderboardTeamPage() {
         setRemoteTeams(mapped);
         const locked = await fetchAllLockHistory();
         setLockedHistory(locked);
-        setLoaded(true);
       };
       loadRemote();
       return;
     }
-
-    const saved = getJSON<LeaderboardTeam[] | null>(
-      "fantasy_leaderboard",
-      null
-    );
-    if (saved && Array.isArray(saved) && saved.length > 0) {
-      setLeaderboardTeams(saved);
-    }
-    setLoaded(true);
   }, [ready, user, isConfigured]);
+
+  const loaded = ready && (!(user && isConfigured) || remoteTeams !== null);
 
   const teamSource = remoteTeams ?? leaderboardTeams;
   const teamId = typeof params.teamId === "string" ? params.teamId : "";
@@ -432,7 +432,7 @@ function GroundRow({
   title: string;
   players: Array<Player | undefined>;
   team: LeaderboardTeam;
-  statsMap: Map<string, any>;
+  statsMap: Map<string, MatchStats[]>;
   playerRoleMap: Map<string, PlayerRole>;
 }) {
   const validPlayers = players.filter(Boolean);
@@ -447,7 +447,7 @@ function GroundRow({
         {validPlayers.map(player => {
           const id = player!.id;
           const role = (playerRoleMap.get(id) ?? player!.role) as PlayerRole;
-          const matches = (statsMap as any).get(id) || [];
+          const matches = statsMap.get(id) || [];
           const isCaptain = team.captainId === id;
           const isVice = team.viceCaptainId === id;
           const breakdown = scorePlayerBreakdown(

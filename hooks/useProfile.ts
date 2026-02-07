@@ -31,21 +31,25 @@ export function useProfile() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const key = scopedKey(STORAGE_KEY, user?.id);
-    const cached = getJSON<UserProfile | null>(key, null);
-    if (cached) {
-      setProfile(cached);
-    }
-  }, [user?.id]);
+    let cancelled = false;
 
-  useEffect(() => {
-    if (!ready) return;
-    if (!user || !isConfigured) {
-      setLoading(false);
-      return;
-    }
     const load = async () => {
+      const key = scopedKey(STORAGE_KEY, user?.id);
+      const cached = getJSON<UserProfile | null>(key, null);
+      await Promise.resolve();
+      if (cancelled) return;
+      if (cached) {
+        setProfile(cached);
+      }
+
+      if (!ready) return;
+      if (!user || !isConfigured) {
+        setLoading(false);
+        return;
+      }
+
       const remote = await fetchUserProfile(user.id);
+      if (cancelled) return;
       if (remote) {
         const mapped: UserProfile = {
           full_name: remote.full_name,
@@ -59,7 +63,7 @@ export function useProfile() {
           team_name_edit_used: Boolean(remote.team_name_edit_used),
         };
         setProfile(mapped);
-        setJSON(scopedKey(STORAGE_KEY, user.id), mapped);
+        setJSON(key, mapped);
         setLoading(false);
         return;
       }
@@ -90,12 +94,18 @@ export function useProfile() {
           full_name_edit_used: derived.full_name_edit_used,
           team_name_edit_used: derived.team_name_edit_used,
         });
+        if (cancelled) return;
         setProfile(derived);
-        setJSON(scopedKey(STORAGE_KEY, user.id), derived);
+        setJSON(key, derived);
       }
+      if (cancelled) return;
       setLoading(false);
     };
-    load();
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user, ready, isConfigured]);
 
   const saveProfile = async (next: UserProfile) => {

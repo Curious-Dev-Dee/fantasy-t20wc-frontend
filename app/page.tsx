@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -316,9 +317,12 @@ export default function HomePage() {
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               {profile.team_photo_url ? (
-                <img
+                <Image
                   src={profile.team_photo_url}
                   alt="Team"
+                  width={40}
+                  height={40}
+                  unoptimized
                   className="h-10 w-10 rounded-full border border-white/10 object-cover"
                 />
               ) : (

@@ -42,10 +42,14 @@ export default function LeaguesPage() {
   const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    if (!ready) return;
-    if (user && isConfigured) {
-      const loadRemote = async () => {
+    let cancelled = false;
+
+    const load = async () => {
+      if (!ready) return;
+
+      if (user && isConfigured) {
         const remoteLeagues = await fetchUserLeagues(user.id);
+        if (cancelled) return;
         const normalized: League[] = remoteLeagues.map(league => ({
           id: league.id,
           name: league.name,
@@ -72,28 +76,36 @@ export default function LeaguesPage() {
               const leagueId = row.league_id as string;
               counts[leagueId] = (counts[leagueId] || 0) + 1;
             });
+            if (cancelled) return;
             setMemberCounts(counts);
           }
         }
-      };
-      loadRemote();
-      return;
-    }
+        return;
+      }
 
-    const saved = getJSON<League[] | null>("fantasy_leagues", null);
-    const joined = getJSON<string[]>("fantasy_joined_leagues", []);
-    const owners = getJSON<string[]>("fantasy_owned_leagues", []);
-    if (saved && Array.isArray(saved)) {
-      const merged = [...baseLeagues];
-      saved.forEach(savedLeague => {
-        if (!merged.find(l => l.id === savedLeague.id)) {
-          merged.push(savedLeague);
-        }
-      });
-      setLeagues(merged);
-    }
-    setJoinedLeagueIds(joined);
-    setOwnerLeagueIds(owners);
+      const saved = getJSON<League[] | null>("fantasy_leagues", null);
+      const joined = getJSON<string[]>("fantasy_joined_leagues", []);
+      const owners = getJSON<string[]>("fantasy_owned_leagues", []);
+      await Promise.resolve();
+      if (cancelled) return;
+      if (saved && Array.isArray(saved)) {
+        const merged = [...baseLeagues];
+        saved.forEach(savedLeague => {
+          if (!merged.find(l => l.id === savedLeague.id)) {
+            merged.push(savedLeague);
+          }
+        });
+        setLeagues(merged);
+      }
+      setJoinedLeagueIds(joined);
+      setOwnerLeagueIds(owners);
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
   }, [ready, user, isConfigured]);
 
 

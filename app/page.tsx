@@ -25,6 +25,17 @@ type LeagueSummary = {
   myScore: number | null;
 };
 
+type WorkingTeamLite = {
+  players?: string[];
+  captainId?: string | null;
+  viceCaptainId?: string | null;
+};
+
+type UserTeamLite = {
+  user_id: string;
+  working_team: WorkingTeamLite | null;
+};
+
 type HomeCache = {
   globalTop: Array<{ id: string; name: string; score: number }>;
   myGlobalRank: number | null;
@@ -212,16 +223,13 @@ export default function HomePage() {
             )
           )
         );
-        let memberTeams: Array<{
-          user_id: string;
-          working_team: any;
-        }> = [];
+        let memberTeams: UserTeamLite[] = [];
         if (allMemberIds.length > 0 && supabase) {
           const { data } = await supabase
             .from("user_teams")
             .select("user_id, working_team")
             .in("user_id", allMemberIds);
-          memberTeams = (data as any[]) || [];
+          memberTeams = (data ?? []) as UserTeamLite[];
         }
 
         leagues.forEach((league, index) => {

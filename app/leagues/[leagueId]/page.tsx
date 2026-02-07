@@ -27,6 +27,25 @@ import {
 import { supabase } from "@/utils/supabaseClient";
 import type { UserTeamRow } from "@/utils/teamPersistence";
 
+type WorkingTeamLite = {
+  players?: string[];
+  captainId?: string | null;
+  viceCaptainId?: string | null;
+};
+
+const asWorkingTeam = (value: unknown): WorkingTeamLite | null => {
+  if (!value || typeof value !== "object") return null;
+  const raw = value as Record<string, unknown>;
+  const players = Array.isArray(raw.players)
+    ? raw.players.filter((entry): entry is string => typeof entry === "string")
+    : [];
+  return {
+    players,
+    captainId: typeof raw.captainId === "string" ? raw.captainId : null,
+    viceCaptainId: typeof raw.viceCaptainId === "string" ? raw.viceCaptainId : null,
+  };
+};
+
 export default function LeagueDetailPage() {
   const params = useParams<{ leagueId: string }>();
   const tournament = useTournament();
@@ -47,29 +66,34 @@ export default function LeagueDetailPage() {
   const [lockedHistory, setLockedHistory] = useState<LockedHistoryRow[]>([]);
 
   useEffect(() => {
-    if (!ready) return;
-    if (user && isConfigured) {
-      const loadRemote = async () => {
-        const leagueRow = await fetchLeague(params.leagueId);
-        const members = await fetchLeagueMembers(params.leagueId);
+    let cancelled = false;
+
+    const load = async () => {
+      if (!ready) return;
+      if (user && isConfigured) {
+        const [leagueRow, members, locked] = await Promise.all([
+          fetchLeague(params.leagueId),
+          fetchLeagueMembers(params.leagueId),
+          fetchAllLockHistory(),
+        ]);
+        if (cancelled) return;
         setRemoteLeague(leagueRow);
         setRemoteMembers(members);
-        const locked = await fetchAllLockHistory();
         setLockedHistory(locked);
 
         if (leagueRow && supabase && members.length > 0) {
           const ids = members.map(member => member.user_id);
-          const { data } = await supabase
-            .from("user_teams")
-            .select("*")
-            .in("user_id", ids);
+          const [{ data }, { data: profiles }] = await Promise.all([
+            supabase.from("user_teams").select("*").in("user_id", ids),
+            supabase
+              .from("user_profiles")
+              .select("user_id, team_name")
+              .in("user_id", ids),
+          ]);
+          if (cancelled) return;
           if (data) {
             setMemberTeams(data as UserTeamRow[]);
           }
-          const { data: profiles } = await supabase
-            .from("user_profiles")
-            .select("user_id, team_name")
-            .in("user_id", ids);
           if (profiles) {
             const map: Record<string, string> = {};
             profiles.forEach(profileRow => {
@@ -80,33 +104,53 @@ export default function LeagueDetailPage() {
             setMemberNames(map);
           }
         }
+        if (cancelled) return;
         setLoaded(true);
-      };
-      loadRemote();
-      return;
-    }
+        return;
+      }
 
-    const saved = getJSON<League[] | null>("fantasy_leagues", null);
-    if (saved && Array.isArray(saved)) {
-      const merged = [...baseLeagues];
-      saved.forEach(savedLeague => {
-        if (!merged.find(l => l.id === savedLeague.id)) {
-          merged.push(savedLeague);
-        }
-      });
-      setLeagues(merged);
-    }
-    setLoaded(true);
+      const saved = getJSON<League[] | null>("fantasy_leagues", null);
+      await Promise.resolve();
+      if (cancelled) return;
+      if (saved && Array.isArray(saved)) {
+        const merged = [...baseLeagues];
+        saved.forEach(savedLeague => {
+          if (!merged.find(l => l.id === savedLeague.id)) {
+            merged.push(savedLeague);
+          }
+        });
+        setLeagues(merged);
+      }
+      setLoaded(true);
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
   }, [ready, user, isConfigured, params.leagueId]);
 
   useEffect(() => {
-    const saved = getJSON<LeaderboardTeam[] | null>(
-      "fantasy_leaderboard",
-      null
-    );
-    if (saved && Array.isArray(saved) && saved.length > 0) {
-      setLeaderboardTeams(saved);
-    }
+    let cancelled = false;
+
+    const loadLeaderboard = async () => {
+      const saved = getJSON<LeaderboardTeam[] | null>(
+        "fantasy_leaderboard",
+        null
+      );
+      await Promise.resolve();
+      if (cancelled) return;
+      if (saved && Array.isArray(saved) && saved.length > 0) {
+        setLeaderboardTeams(saved);
+      }
+    };
+
+    void loadLeaderboard();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const league = useMemo(() => {
@@ -165,7 +209,7 @@ export default function LeagueDetailPage() {
     if (user && isConfigured) {
       const memberScores = remoteMembers.map(member => {
         const teamRow = memberTeams.find(team => team.user_id === member.user_id);
-        const working = (teamRow?.working_team as any) || null;
+        const working = asWorkingTeam(teamRow?.working_team);
         const playerIds = Array.isArray(working?.players) ? working.players : [];
         const captainId = working?.captainId || null;
         const viceCaptainId = working?.viceCaptainId || null;
@@ -261,17 +305,32 @@ export default function LeagueDetailPage() {
     user,
     isConfigured,
     lockedHistory,
+    myTeam.lockedTeams,
   ]);
 
   useEffect(() => {
-    if (!league) return;
-    if (user && isConfigured && remoteLeague) {
-      setIsOwner(remoteLeague.owner_id === user.id);
-      return;
-    }
-    const saved = getJSON<string[]>("fantasy_owned_leagues", []);
-    setIsOwner(saved.includes(league.id));
-  }, [league?.id, user, isConfigured, remoteLeague]);
+    let cancelled = false;
+
+    const loadOwner = async () => {
+      if (!league) return;
+      if (user && isConfigured && remoteLeague) {
+        await Promise.resolve();
+        if (cancelled) return;
+        setIsOwner(remoteLeague.owner_id === user.id);
+        return;
+      }
+      const saved = getJSON<string[]>("fantasy_owned_leagues", []);
+      await Promise.resolve();
+      if (cancelled) return;
+      setIsOwner(saved.includes(league.id));
+    };
+
+    void loadOwner();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [league?.id, user?.id, isConfigured, remoteLeague?.owner_id]);
 
   if (loaded && !league) {
     return (

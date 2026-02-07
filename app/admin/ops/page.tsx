@@ -6,6 +6,7 @@ import { fixtures } from "@/data/fixtures";
 import { players } from "@/data/players";
 import { useAuth } from "@/hooks/useAuth";
 import { useMatchStats } from "@/hooks/useMatchStats";
+import { useTournament } from "@/hooks/useTournament";
 import { isAdminEmail } from "@/utils/admin";
 import { teamShort } from "@/utils/teamCodes";
 import { scoreMatchBase, type PlayerRole } from "@/utils/scoring";
@@ -14,6 +15,7 @@ import { fetchAllLockHistory, type LockedHistoryRow } from "@/utils/lockHistoryP
 const MATCH_DURATION_MS = 3.5 * 60 * 60 * 1000;
 
 export default function AdminOpsPage() {
+  const { now } = useTournament();
   const { user, ready } = useAuth();
   const { stats } = useMatchStats();
   const [selectedMatchId, setSelectedMatchId] = useState<number>(
@@ -33,7 +35,6 @@ export default function AdminOpsPage() {
     []
   );
 
-  const now = Date.now();
   const sortedFixtures = useMemo(() => {
     return [...fixtures].sort(
       (a, b) => new Date(a.startTimeUTC).getTime() - new Date(b.startTimeUTC).getTime()

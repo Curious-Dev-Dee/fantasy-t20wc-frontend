@@ -16,7 +16,6 @@ import {
 } from "@/utils/scoring";
 import { useMatchStats } from "@/hooks/useMatchStats";
 import { useProfile } from "@/hooks/useProfile";
-import { getPlayerPhotoUrl } from "@/utils/playerPhotos";
 
 export default function TeamPage() {
   const team = useTeam();
@@ -213,7 +212,6 @@ function GroundRow({
       <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
         {validPlayers.map(player => {
           const id = player!.id;
-          const photo = getPlayerPhotoUrl(id);
           const role: PlayerRole = playerRoleMap.get(id) || player!.role;
           const matches = (statsMap as any).get(id) || [];
           const isCaptain = team.workingTeam.captainId === id;
@@ -236,7 +234,7 @@ function GroundRow({
               <div className="relative">
                 <div className="h-[clamp(34px,8.5vw,42px)] w-[clamp(34px,8.5vw,42px)] rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shadow-[0_0_12px_rgba(16,185,129,0.2)]">
                   <img
-                    src={photo ?? "/player-silhouette.svg"}
+                    src="/player-silhouette.svg"
                     alt={player!.name}
                     className="h-full w-full object-cover"
                   />

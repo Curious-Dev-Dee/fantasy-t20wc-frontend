@@ -7,32 +7,40 @@ import { supabase, isSupabaseConfigured } from "@/utils/supabaseClient";
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(
+    () => !isSupabaseConfigured || !supabase
+  );
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) {
-      setReady(true);
       return;
     }
 
-    supabase.auth.getSession().then(({ data }) => {
+    let cancelled = false;
+
+    const loadSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
       setSession(data.session ?? null);
       setUser(data.session?.user ?? null);
       setReady(true);
-    });
+    };
+
+    loadSession();
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
       (_event, nextSession) => {
+        if (cancelled) return;
         setSession(nextSession);
         setUser(nextSession?.user ?? null);
       }
     );
 
     return () => {
+      cancelled = true;
       subscription.subscription.unsubscribe();
     };
   }, []);
 
   return { session, user, ready, isConfigured: isSupabaseConfigured };
 }
-

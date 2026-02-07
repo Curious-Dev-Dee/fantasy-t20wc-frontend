@@ -5,6 +5,9 @@ import { players } from "@/data/players";
 
 const LOCK_WINDOW_MS = 10 * 60 * 1000;
 const MAX_PLAYERS = 11;
+const TEAM_NAME_MIN_LENGTH = 3;
+const TEAM_NAME_MAX_LENGTH = 30;
+const TEAM_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 ._'&-]*$/;
 
 type WorkingTeam = {
   players: string[];
@@ -18,6 +21,30 @@ type UserTeamPayload = {
 };
 
 const VALID_PLAYER_IDS = new Set(players.map(player => player.id));
+
+const sanitizeTeamName = (value: string) => {
+  const normalized = value.trim().replace(/\s+/g, " ");
+  if (normalized.length < TEAM_NAME_MIN_LENGTH) {
+    return {
+      ok: false as const,
+      error: `team_name must be at least ${TEAM_NAME_MIN_LENGTH} characters`,
+    };
+  }
+  if (normalized.length > TEAM_NAME_MAX_LENGTH) {
+    return {
+      ok: false as const,
+      error: `team_name must be at most ${TEAM_NAME_MAX_LENGTH} characters`,
+    };
+  }
+  if (!TEAM_NAME_PATTERN.test(normalized)) {
+    return {
+      ok: false as const,
+      error:
+        "team_name can only contain letters, numbers, spaces, and . _ ' & -",
+    };
+  }
+  return { ok: true as const, value: normalized };
+};
 
 const sanitizeWorkingTeam = (value: unknown): WorkingTeam | null => {
   if (value === null) return null;
@@ -182,7 +209,14 @@ export async function POST(req: NextRequest) {
     if (body.team_name === null) {
       updateRow.team_name = null;
     } else if (typeof body.team_name === "string") {
-      updateRow.team_name = body.team_name.trim();
+      const parsed = sanitizeTeamName(body.team_name);
+      if (!parsed.ok) {
+        return NextResponse.json(
+          { ok: false, error: parsed.error },
+          { status: 400 }
+        );
+      }
+      updateRow.team_name = parsed.value;
     } else {
       return NextResponse.json(
         { ok: false, error: "Invalid team_name" },

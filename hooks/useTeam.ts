@@ -74,7 +74,7 @@ const sanitizeWorkingTeam = (team: WorkingTeam): WorkingTeam => {
 const sanitizeLockedTeam = (team: LockedTeam): LockedTeam | null => {
   const players = sanitizePlayers(team.players || []);
   if (players.length === 0) return null;
-  let captainId = players.includes(team.captainId)
+  const captainId = players.includes(team.captainId)
     ? team.captainId
     : players[0];
   let viceCaptainId = players.includes(team.viceCaptainId)
@@ -117,39 +117,52 @@ export function useTeam() {
 
   /* LOAD */
   useEffect(() => {
-    const keyWorking = scopedKey("fantasy_working_team", user?.id);
-    const keyLocked = scopedKey("fantasy_locked_teams", user?.id);
-    const keySubs = scopedKey("fantasy_subs_used", user?.id);
-    const saved = getJSON<WorkingTeam | null>(keyWorking, null);
-    const locked = getJSON<LockedTeam[] | null>(keyLocked, null);
-    const subs = localStorage.getItem(keySubs);
+    let cancelled = false;
 
-    if (saved && Array.isArray(saved.players)) {
-      const cleaned = sanitizeWorkingTeam(saved);
-      setWorkingTeam(cleaned);
-      localStorage.setItem(keyWorking, JSON.stringify(cleaned));
-    } else {
-      setWorkingTeam({
-        players: [],
-        captainId: null,
-        viceCaptainId: null,
-      });
-    }
+    const loadLocal = async () => {
+      const keyWorking = scopedKey("fantasy_working_team", user?.id);
+      const keyLocked = scopedKey("fantasy_locked_teams", user?.id);
+      const keySubs = scopedKey("fantasy_subs_used", user?.id);
+      const saved = getJSON<WorkingTeam | null>(keyWorking, null);
+      const locked = getJSON<LockedTeam[] | null>(keyLocked, null);
+      const subs = localStorage.getItem(keySubs);
 
-    if (locked && Array.isArray(locked)) {
-      const cleanedLocked = dedupeLockedTeams(locked);
-      setLockedTeams(cleanedLocked);
-      localStorage.setItem(keyLocked, JSON.stringify(cleanedLocked));
-    } else {
-      setLockedTeams([]);
-    }
+      await Promise.resolve();
+      if (cancelled) return;
 
-    if (subs) {
-      const parsed = Number(subs);
-      setSubsUsed(Number.isFinite(parsed) ? parsed : 0);
-    } else {
-      setSubsUsed(0);
-    }
+      if (saved && Array.isArray(saved.players)) {
+        const cleaned = sanitizeWorkingTeam(saved);
+        setWorkingTeam(cleaned);
+        localStorage.setItem(keyWorking, JSON.stringify(cleaned));
+      } else {
+        setWorkingTeam({
+          players: [],
+          captainId: null,
+          viceCaptainId: null,
+        });
+      }
+
+      if (locked && Array.isArray(locked)) {
+        const cleanedLocked = dedupeLockedTeams(locked);
+        setLockedTeams(cleanedLocked);
+        localStorage.setItem(keyLocked, JSON.stringify(cleanedLocked));
+      } else {
+        setLockedTeams([]);
+      }
+
+      if (subs) {
+        const parsed = Number(subs);
+        setSubsUsed(Number.isFinite(parsed) ? parsed : 0);
+      } else {
+        setSubsUsed(0);
+      }
+    };
+
+    void loadLocal();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id]);
 
   useEffect(() => {
@@ -497,14 +510,26 @@ export function useTeam() {
     : Infinity;
 
   useEffect(() => {
-    if (!nextMatchId) return;
-    const phaseKeyStorage = scopedKey("fantasy_subs_phase", user?.id);
-    const storedPhase = localStorage.getItem(phaseKeyStorage);
-    if (storedPhase && storedPhase === phaseKey) return;
-    localStorage.setItem(phaseKeyStorage, phaseKey);
-    setSubsUsed(0);
-    localStorage.setItem(scopedKey("fantasy_subs_used", user?.id), "0");
-    persistRemote({ subs_used: 0 });
+    let cancelled = false;
+
+    const resetSubsForPhase = async () => {
+      if (!nextMatchId) return;
+      const phaseKeyStorage = scopedKey("fantasy_subs_phase", user?.id);
+      const storedPhase = localStorage.getItem(phaseKeyStorage);
+      if (storedPhase && storedPhase === phaseKey) return;
+      localStorage.setItem(phaseKeyStorage, phaseKey);
+      await Promise.resolve();
+      if (cancelled) return;
+      setSubsUsed(0);
+      localStorage.setItem(scopedKey("fantasy_subs_used", user?.id), "0");
+      persistRemote({ subs_used: 0 });
+    };
+
+    void resetSubsForPhase();
+
+    return () => {
+      cancelled = true;
+    };
   }, [phaseKey, nextMatchId, user?.id]);
 
   useEffect(() => {
@@ -518,14 +543,26 @@ export function useTeam() {
   }, [remoteLoaded, user, isConfigured]);
 
   useEffect(() => {
-    const matchToLock = lockWindowMatch ?? nextMatch;
-    if (!matchToLock) return;
-    const matchTime = new Date(matchToLock.startTimeUTC).getTime();
-    if (now < matchTime) return;
-    if (!isValidTeam) return;
-    if (!workingTeam.captainId || !workingTeam.viceCaptainId) return;
-    if (lockedTeams.some(team => team.matchId === matchToLock.matchId)) return;
-    lockTeam(matchToLock);
+    let cancelled = false;
+
+    const maybeAutoLock = async () => {
+      const matchToLock = lockWindowMatch ?? nextMatch;
+      if (!matchToLock) return;
+      const matchTime = new Date(matchToLock.startTimeUTC).getTime();
+      if (now < matchTime) return;
+      if (!isValidTeam) return;
+      if (!workingTeam.captainId || !workingTeam.viceCaptainId) return;
+      if (lockedTeams.some(team => team.matchId === matchToLock.matchId)) return;
+      await Promise.resolve();
+      if (cancelled) return;
+      lockTeam(matchToLock);
+    };
+
+    void maybeAutoLock();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     now,
     nextMatch,

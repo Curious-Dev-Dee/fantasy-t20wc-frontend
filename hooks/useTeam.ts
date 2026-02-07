@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { players } from "@/data/players";
 import { useTournament } from "./useTournament";
 import { getJSON, scopedKey } from "@/utils/storage";
@@ -283,7 +283,7 @@ export function useTeam() {
     loadRemote();
   }, [user, ready, isConfigured]);
 
-  const persistRemote = (
+  const persistRemote = useCallback((
     payload: Partial<{
       working_team: WorkingTeam;
       locked_teams: LockedTeam[];
@@ -296,7 +296,7 @@ export function useTeam() {
       locked_teams: payload.locked_teams ?? lockedTeams,
       subs_used: payload.subs_used ?? subsUsed,
     });
-  };
+  }, [user, isConfigured, workingTeam, lockedTeams, subsUsed]);
 
   const isEditLocked = Boolean(lockWindowMatch);
 
@@ -306,83 +306,6 @@ export function useTeam() {
     const keyWorking = scopedKey("fantasy_working_team", user?.id);
     localStorage.setItem(keyWorking, JSON.stringify(workingTeam));
     persistRemote({ working_team: workingTeam });
-  };
-
-  /* LOCK TEAM AT MATCH TIME */
-  const lockTeam = (matchOverride?: typeof nextMatch): { ok: boolean; reason?: string } => {
-    const matchToLock = matchOverride ?? lockWindowMatch ?? nextMatch;
-    if (!matchToLock) {
-      return { ok: false, reason: "No upcoming match found." };
-    }
-
-    if (lockedTeams.some(team => team.matchId === matchToLock.matchId)) {
-      return { ok: false, reason: "Team already locked for this match." };
-    }
-
-    if (!workingTeam.captainId || !workingTeam.viceCaptainId) {
-      return {
-        ok: false,
-        reason: "Select a captain and vice-captain before locking.",
-      };
-    }
-
-    const lastLocked = lockedTeams.at(-1);
-
-    let subs = 0;
-
-    if (lastLocked) {
-      const prev = new Set(lastLocked.players);
-      const curr = new Set(workingTeam.players);
-
-      const out = [...prev].filter(p => !curr.has(p));
-      const _in = [...curr].filter(p => !prev.has(p));
-
-      subs = Math.max(out.length, _in.length);
-    }
-
-    const locked: LockedTeam = {
-      matchId: matchToLock.matchId,
-      players: workingTeam.players,
-      captainId: workingTeam.captainId!,
-      viceCaptainId: workingTeam.viceCaptainId!,
-      subsUsed: subs,
-    };
-
-    const updated = [...lockedTeams, locked];
-
-    const nextSubsUsed = subsUsed + subs;
-    if (Number.isFinite(maxSubs) && nextSubsUsed > maxSubs) {
-      return { ok: false, reason: "No subs left for this stage." };
-    }
-
-    setLockedTeams(updated);
-    setSubsUsed(nextSubsUsed);
-
-    const keyLocked = scopedKey("fantasy_locked_teams", user?.id);
-    const keySubs = scopedKey("fantasy_subs_used", user?.id);
-    const keyNotice = scopedKey("fantasy_lock_notice", user?.id);
-    localStorage.setItem(keyLocked, JSON.stringify(updated));
-    localStorage.setItem(keySubs, String(nextSubsUsed));
-    localStorage.setItem(keyNotice, String(matchToLock.matchId));
-
-    upsertUserTeam(user!.id, {
-      working_team: workingTeam,
-      locked_teams: updated,
-      subs_used: nextSubsUsed,
-    });
-
-    if (user && isConfigured) {
-      insertLockHistory({
-        user_id: user.id,
-        match_id: matchToLock.matchId,
-        players: workingTeam.players,
-        captain_id: workingTeam.captainId!,
-        vice_captain_id: workingTeam.viceCaptainId!,
-        subs_used: subs,
-      });
-    }
-
-    return { ok: true };
   };
 
   /* HELPERS */
@@ -509,6 +432,96 @@ export function useTeam() {
     ? Math.max(maxSubs - subsUsed, 0)
     : Infinity;
 
+  /* LOCK TEAM AT MATCH TIME */
+  const lockTeam = useCallback(
+    (matchOverride?: typeof nextMatch): { ok: boolean; reason?: string } => {
+      const matchToLock = matchOverride ?? lockWindowMatch ?? nextMatch;
+      if (!matchToLock) {
+        return { ok: false, reason: "No upcoming match found." };
+      }
+
+      if (lockedTeams.some(team => team.matchId === matchToLock.matchId)) {
+        return { ok: false, reason: "Team already locked for this match." };
+      }
+
+      if (!workingTeam.captainId || !workingTeam.viceCaptainId) {
+        return {
+          ok: false,
+          reason: "Select a captain and vice-captain before locking.",
+        };
+      }
+
+      const lastLocked = lockedTeams.at(-1);
+
+      let subs = 0;
+
+      if (lastLocked) {
+        const prev = new Set(lastLocked.players);
+        const curr = new Set(workingTeam.players);
+
+        const out = [...prev].filter(p => !curr.has(p));
+        const _in = [...curr].filter(p => !prev.has(p));
+
+        subs = Math.max(out.length, _in.length);
+      }
+
+      const locked: LockedTeam = {
+        matchId: matchToLock.matchId,
+        players: workingTeam.players,
+        captainId: workingTeam.captainId,
+        viceCaptainId: workingTeam.viceCaptainId,
+        subsUsed: subs,
+      };
+
+      const updated = [...lockedTeams, locked];
+
+      const nextSubsUsed = subsUsed + subs;
+      if (Number.isFinite(maxSubs) && nextSubsUsed > maxSubs) {
+        return { ok: false, reason: "No subs left for this stage." };
+      }
+
+      setLockedTeams(updated);
+      setSubsUsed(nextSubsUsed);
+
+      const keyLocked = scopedKey("fantasy_locked_teams", user?.id);
+      const keySubs = scopedKey("fantasy_subs_used", user?.id);
+      const keyNotice = scopedKey("fantasy_lock_notice", user?.id);
+      localStorage.setItem(keyLocked, JSON.stringify(updated));
+      localStorage.setItem(keySubs, String(nextSubsUsed));
+      localStorage.setItem(keyNotice, String(matchToLock.matchId));
+
+      persistRemote({
+        working_team: workingTeam,
+        locked_teams: updated,
+        subs_used: nextSubsUsed,
+      });
+
+      if (user && isConfigured) {
+        insertLockHistory({
+          user_id: user.id,
+          match_id: matchToLock.matchId,
+          players: workingTeam.players,
+          captain_id: workingTeam.captainId,
+          vice_captain_id: workingTeam.viceCaptainId,
+          subs_used: subs,
+        });
+      }
+
+      return { ok: true };
+    },
+    [
+      lockWindowMatch,
+      nextMatch,
+      lockedTeams,
+      workingTeam,
+      subsUsed,
+      maxSubs,
+      user,
+      isConfigured,
+      persistRemote,
+    ]
+  );
+
   useEffect(() => {
     let cancelled = false;
 
@@ -530,7 +543,7 @@ export function useTeam() {
     return () => {
       cancelled = true;
     };
-  }, [phaseKey, nextMatchId, user?.id]);
+  }, [phaseKey, nextMatchId, user?.id, persistRemote]);
 
   useEffect(() => {
     if (!remoteLoaded) return;
@@ -540,7 +553,7 @@ export function useTeam() {
       locked_teams: lockedTeams,
       subs_used: subsUsed,
     });
-  }, [remoteLoaded, user, isConfigured]);
+  }, [remoteLoaded, user, isConfigured, workingTeam, lockedTeams, subsUsed]);
 
   useEffect(() => {
     let cancelled = false;
@@ -571,6 +584,7 @@ export function useTeam() {
     workingTeam.captainId,
     workingTeam.viceCaptainId,
     lockedTeams,
+    lockTeam,
   ]);
 
   const subsLeftLabel = Number.isFinite(subsLeft)

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTeam } from "@/hooks/useTeam";
@@ -163,23 +164,6 @@ export default function TeamPage() {
   );
 }
 
-function SummaryCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-      <div className="text-xs text-slate-400">{label}</div>
-      <div className="text-sm sm:text-base font-semibold text-white mt-1 whitespace-nowrap leading-tight">
-        {value}
-      </div>
-    </div>
-  );
-}
-
 function GroundRow({
   title,
   players,
@@ -226,9 +210,11 @@ function GroundRow({
             >
               <div className="relative">
                 <div className="h-[clamp(34px,8.5vw,42px)] w-[clamp(34px,8.5vw,42px)] rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shadow-[0_0_12px_rgba(16,185,129,0.2)]">
-                  <img
+                  <Image
                     src="/player-silhouette.svg"
                     alt={player!.name}
+                    width={42}
+                    height={42}
                     className="h-full w-full object-cover"
                   />
                 </div>

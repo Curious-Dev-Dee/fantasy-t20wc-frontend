@@ -34,7 +34,6 @@ export async function insertLockHistory(row: LockedHistoryRow) {
   if (error) {
     // Surface lock errors in console for debugging.
     // Client already guards lock timing, so this is a safety net.
-    // eslint-disable-next-line no-console
     console.warn("Lock history insert failed:", error.message);
   }
 }

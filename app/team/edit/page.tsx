@@ -58,7 +58,6 @@ export default function EditTeamPage() {
   const team = useTeam();
   const tournament = useTournament();
   const { user } = useAuth();
-  const [mounted, setMounted] = useState(false);
 
   const [savedSnapshot, setSavedSnapshot] = useState<TeamSnapshot>(
     EMPTY_SNAPSHOT
@@ -87,7 +86,20 @@ export default function EditTeamPage() {
   const [activePlayerId, setActivePlayerId] = useState<string | null>(null);
 
   useEffect(() => {
-    setSavedSnapshot(loadSnapshot(user?.id));
+    let cancelled = false;
+
+    const loadSaved = async () => {
+      const snapshot = loadSnapshot(user?.id);
+      await Promise.resolve();
+      if (cancelled) return;
+      setSavedSnapshot(snapshot);
+    };
+
+    void loadSaved();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id]);
 
   useEffect(() => {
@@ -98,17 +110,32 @@ export default function EditTeamPage() {
   }, []);
 
   useEffect(() => {
-    if (!tournament.nextMatch) return;
-    const notice = localStorage.getItem(scopedKey("fantasy_lock_notice", user?.id));
-    if (!notice) return;
-    if (notice !== String(tournament.nextMatch.matchId)) return;
-    const matchTime = new Date(tournament.nextMatch.startTimeUTC).getTime();
-    if (now < matchTime) return;
-    setShowAutoLockToast(true);
-    localStorage.removeItem(scopedKey("fantasy_lock_notice", user?.id));
-    const timeout = setTimeout(() => setShowAutoLockToast(false), 1500);
-    return () => clearTimeout(timeout);
-  }, [tournament.nextMatch, now]);
+    let cancelled = false;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+
+    const maybeShowAutoLockToast = async () => {
+      if (!tournament.nextMatch) return;
+      const noticeKey = scopedKey("fantasy_lock_notice", user?.id);
+      const notice = localStorage.getItem(noticeKey);
+      if (!notice) return;
+      if (notice !== String(tournament.nextMatch.matchId)) return;
+      const matchTime = new Date(tournament.nextMatch.startTimeUTC).getTime();
+      if (now < matchTime) return;
+
+      await Promise.resolve();
+      if (cancelled) return;
+      setShowAutoLockToast(true);
+      localStorage.removeItem(noticeKey);
+      timeout = setTimeout(() => setShowAutoLockToast(false), 1500);
+    };
+
+    void maybeShowAutoLockToast();
+
+    return () => {
+      cancelled = true;
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [tournament.nextMatch, now, user?.id]);
 
   useEffect(() => {
     if (!showLockTip) return;
@@ -306,10 +333,6 @@ export default function EditTeamPage() {
     ? `Locked for Match #${tournament.lockWindowMatch.matchId}`
     : null;
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
     <div className="min-h-screen bg-[#0B0F1A] text-white px-4 sm:px-6 py-4 pb-24">
       <div className="max-w-6xl mx-auto space-y-4">
@@ -324,9 +347,7 @@ export default function EditTeamPage() {
                 {" - "}
                 {isLockWindow
                   ? `Locked until ${formatLocalTime(lockEndsAt)}`
-                  : mounted
-                  ? `Lock in ${countdown}`
-                  : "Lock in --:--:--"}
+                  : `Lock in ${countdown}`}
               </div>
             </div>
             <Link

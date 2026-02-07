@@ -344,17 +344,15 @@ export default function LeagueDetailPage() {
             const isMe = isRemote
               ? member.teamId === user?.id
               : member.teamId === "my-team";
-            const Wrapper: React.ElementType = isMe ? Link : "div";
-            const wrapperProps = isMe
-              ? {
-                  href: "/team",
-                  className:
-                    "block border border-white/10 rounded-xl p-4 hover:border-white/30 transition",
-                }
-              : {
-                  className:
-                    "block border border-white/10 rounded-xl p-4",
-                };
+            const href = isMe
+              ? "/team"
+              : `/leaderboard/${member.teamId}`;
+            const Wrapper: React.ElementType = Link;
+            const wrapperProps = {
+              href,
+              className:
+                "block border border-white/10 rounded-xl p-4 hover:border-white/30 transition",
+            };
 
             return (
               <Wrapper key={member.teamId} {...wrapperProps}>

@@ -45,7 +45,9 @@ export default function LeaderboardTeamPage() {
         const mapped: LeaderboardTeam[] = rows.map(row => ({
           id: row.user_id,
           name: row.team_name || "Team",
-          players: row.working_team?.players || [],
+          players: Array.isArray(row.working_team?.players)
+            ? row.working_team?.players
+            : [],
           captainId: row.working_team?.captainId || "",
           viceCaptainId: row.working_team?.viceCaptainId || "",
           rank: 0,
@@ -72,7 +74,8 @@ export default function LeaderboardTeamPage() {
   }, [ready, user, isConfigured]);
 
   const teamSource = remoteTeams ?? leaderboardTeams;
-  const team = teamSource.find(t => t.id === params.teamId);
+  const teamId = typeof params.teamId === "string" ? params.teamId : "";
+  const team = teamSource.find(t => t.id === teamId);
 
   const playerMap = useMemo(
     () => new Map(players.map(player => [player.id, player])),
@@ -115,7 +118,8 @@ export default function LeaderboardTeamPage() {
     return null;
   }
 
-  const roster = team.players
+  const safePlayers = Array.isArray(team.players) ? team.players : [];
+  const roster = safePlayers
     .map(id => playerMap.get(id))
     .filter(Boolean);
 
@@ -133,7 +137,7 @@ export default function LeaderboardTeamPage() {
             .filter(row => row.user_id === team.id)
             .map(row => ({
               matchId: row.match_id,
-              players: row.players,
+              players: Array.isArray(row.players) ? row.players : [],
               captainId: row.captain_id,
               viceCaptainId: row.vice_captain_id,
             })),
@@ -141,7 +145,7 @@ export default function LeaderboardTeamPage() {
           statsMap,
         })
       : scoreTeam({
-          playerIds: team.players,
+          playerIds: safePlayers,
           captainId: team.captainId,
           viceCaptainId: team.viceCaptainId,
           playerRoleMap,

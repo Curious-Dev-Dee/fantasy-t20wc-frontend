@@ -9,6 +9,7 @@ import { useTournament } from "@/hooks/useTournament";
 import { normalizeTeamName, teamShort } from "@/utils/teamCodes";
 import { getJSON, scopedKey } from "@/utils/storage";
 import { useAuth } from "@/hooks/useAuth";
+import { getPlayerPhotoUrl } from "@/utils/playerPhotos";
 
 type TeamSnapshot = {
   players: string[];
@@ -438,6 +439,7 @@ export default function EditTeamPage() {
             {team.selectedPlayers.map(player => {
               const isCaptain = team.workingTeam.captainId === player!.id;
               const isViceCaptain = team.workingTeam.viceCaptainId === player!.id;
+              const photo = getPlayerPhotoUrl(player!.id);
 
               return (
                 <div
@@ -455,7 +457,7 @@ export default function EditTeamPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-11 w-11 rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
                       <img
-                        src="/player-silhouette.svg"
+                        src={photo ?? "/player-silhouette.svg"}
                         alt={player!.name}
                         className="h-full w-full object-cover"
                       />
@@ -551,6 +553,7 @@ export default function EditTeamPage() {
             {sortedPlayers.map(player => {
               const selected = team.workingTeam.players.includes(player.id);
               const canAdd = team.canAddPlayer(player.id);
+              const photo = getPlayerPhotoUrl(player.id);
 
               return (
                 <div
@@ -562,7 +565,7 @@ export default function EditTeamPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-11 w-11 rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
                       <img
-                        src="/player-silhouette.svg"
+                        src={photo ?? "/player-silhouette.svg"}
                         alt={player.name}
                         className="h-full w-full object-cover"
                       />

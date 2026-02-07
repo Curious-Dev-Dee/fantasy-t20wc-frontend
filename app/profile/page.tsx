@@ -14,11 +14,23 @@ export default function ProfilePage() {
   const [photoDirty, setPhotoDirty] = useState(false);
 
   useEffect(() => {
-    setFullName(profile.full_name || "");
-    setTeamName(profile.team_name || "");
-    setPhotoPreview(profile.team_photo_url || null);
-    setPhotoDirty(false);
-  }, [profile.full_name, profile.team_name]);
+    let cancelled = false;
+
+    const syncFromProfile = async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      setFullName(profile.full_name || "");
+      setTeamName(profile.team_name || "");
+      setPhotoPreview(profile.team_photo_url || null);
+      setPhotoDirty(false);
+    };
+
+    void syncFromProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [profile.full_name, profile.team_name, profile.team_photo_url]);
 
   const canEditName = !profile.full_name_edit_used;
   const canEditTeam = !profile.team_name_edit_used;

@@ -7,6 +7,7 @@ import { players } from "@/data/players";
 import { fixtures } from "@/data/fixtures";
 import { useMatchStats } from "@/hooks/useMatchStats";
 import { useTeam } from "@/hooks/useTeam";
+import { useAuth } from "@/hooks/useAuth";
 import { teamShort, normalizeTeamName } from "@/utils/teamCodes";
 import { teamFlag } from "@/utils/teamFlags";
 import { scoreMatchBase, scoreLockedMatch } from "@/utils/scoring";
@@ -20,6 +21,7 @@ export default function MatchCenterPage() {
   const params = useParams<{ matchId: string }>();
   const matchId = Number(params.matchId);
   const fixture = fixtures.find(match => match.matchId === matchId);
+  const { session, isConfigured } = useAuth();
   const { stats, setStats, isRemote } = useMatchStats();
   const team = useTeam();
   const statsRef = useRef(stats);
@@ -195,13 +197,32 @@ export default function MatchCenterPage() {
 
   const syncLive = useCallback(async () => {
     if (!fixture || syncingRef.current) return;
+    const accessToken = session?.access_token;
+    if (!accessToken) {
+      setLiveMessage(
+        isConfigured
+          ? "Please sign in to sync live stats."
+          : "Live sync requires auth configuration."
+      );
+      return;
+    }
+
     syncingRef.current = true;
     setIsSyncing(true);
     setLiveMessage(null);
     try {
-      const currentRes = await fetch("/api/cricketdata/current");
+      const headers = {
+        Authorization: `Bearer ${accessToken}`,
+      };
+
+      const currentRes = await fetch("/api/cricketdata/current", { headers });
+      if (currentRes.status === 429) {
+        const retryAfter = Number(currentRes.headers.get("Retry-After") || 60);
+        setLiveMessage(`Rate limited. Try again in ${retryAfter}s.`);
+        return;
+      }
       const currentJson = await currentRes.json();
-      if (!currentJson.ok) {
+      if (!currentRes.ok || !currentJson.ok) {
         throw new Error(currentJson.error || "Failed to load live matches.");
       }
       const matchUuid = findCricketDataMatchId(currentJson.payload, [
@@ -213,10 +234,16 @@ export default function MatchCenterPage() {
         return;
       }
       const scoreRes = await fetch(
-        `/api/cricketdata/scorecard?id=${matchUuid}`
+        `/api/cricketdata/scorecard?id=${matchUuid}`,
+        { headers }
       );
+      if (scoreRes.status === 429) {
+        const retryAfter = Number(scoreRes.headers.get("Retry-After") || 60);
+        setLiveMessage(`Rate limited. Try again in ${retryAfter}s.`);
+        return;
+      }
       const scoreJson = await scoreRes.json();
-      if (!scoreJson.ok) {
+      if (!scoreRes.ok || !scoreJson.ok) {
         throw new Error(scoreJson.error || "Failed to load scorecard.");
       }
       const mapped = mapCricketDataScorecard(scoreJson.payload, matchId);
@@ -235,7 +262,7 @@ export default function MatchCenterPage() {
       syncingRef.current = false;
       setIsSyncing(false);
     }
-  }, [fixture, matchId, setStats]);
+  }, [fixture, matchId, setStats, session?.access_token, isConfigured]);
 
   useEffect(() => {
     if (!fixture) return;

@@ -10,6 +10,87 @@ const normalizeName = (value: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+type CricketDataResponse<T> = {
+  data?: T;
+  status?: string;
+  [key: string]: unknown;
+};
+
+type NamedEntity = {
+  name?: string;
+  altnames?: string[];
+};
+
+type BattingEntry = {
+  batsman?: NamedEntity;
+  dismissal?: string;
+  "dismissal-text"?: string;
+  r?: number | string;
+  b?: number | string;
+  "4s"?: number | string;
+  "6s"?: number | string;
+};
+
+type BowlingEntry = {
+  bowler?: NamedEntity;
+  o?: number | string;
+  m?: number | string;
+  r?: number | string;
+  w?: number | string;
+};
+
+type CatchingEntry = {
+  catcher?: NamedEntity;
+  catch?: number | string;
+  stumped?: number | string;
+  runout?: number | string;
+};
+
+type ScorecardInning = {
+  batting?: BattingEntry[];
+  bowling?: BowlingEntry[];
+  catching?: CatchingEntry[];
+};
+
+type ScorecardPayload = {
+  data?: {
+    scorecard?: ScorecardInning[];
+  };
+};
+
+type CurrentMatch = {
+  id?: string;
+  teams?: string[];
+};
+
+type FieldingStats = {
+  catches: number;
+  stumpings: number;
+  runOutDirect: number;
+  runOutIndirect: number;
+};
+
+type LiveMatchStats = {
+  matchId: number;
+  inPlayingXI: boolean;
+  impactPlayer: boolean;
+  batting?: Record<string, unknown>;
+  bowling?: Record<string, unknown>;
+  fielding?: FieldingStats;
+  manOfTheMatch?: boolean;
+};
+
+type MatchStatRow = {
+  player_id: string;
+  match_id: number;
+  in_playing_xi: boolean;
+  impact_player: boolean;
+  batting: Record<string, unknown> | null;
+  bowling: Record<string, unknown> | null;
+  fielding: FieldingStats | null;
+  man_of_the_match: boolean;
+};
+
 const buildPlayerMap = () => {
   const map = new Map<string, string>();
   (players as Array<{ id: string; name: string }>).forEach(player => {
@@ -54,7 +135,10 @@ const findFixtureMatchId = (teamA: string, teamB: string) => {
   return match?.matchId ?? null;
 };
 
-const fetchCricketData = async (endpoint: string, params: Record<string, string> = {}) => {
+const fetchCricketData = async <T>(
+  endpoint: string,
+  params: Record<string, string> = {}
+): Promise<CricketDataResponse<T>> => {
   const apiKey = Deno.env.get("CRICKETDATA_API_KEY");
   if (!apiKey) throw new Error("Missing CRICKETDATA_API_KEY");
   const baseUrl = Deno.env.get("CRICKETDATA_BASE_URL") || "https://api.cricapi.com/v1";
@@ -62,12 +146,12 @@ const fetchCricketData = async (endpoint: string, params: Record<string, string>
   url.searchParams.set("apikey", apiKey);
   Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
   const res = await fetch(url.toString());
-  const json = await res.json();
+  const json = (await res.json()) as CricketDataResponse<T>;
   return json;
 };
 
-const mapScorecard = (scorecard: any, matchId: number) => {
-  const matchMap = new Map<string, any>();
+const mapScorecard = (scorecard: ScorecardPayload, matchId: number): MatchStatRow[] => {
+  const matchMap = new Map<string, LiveMatchStats>();
   const innings = scorecard?.data?.scorecard ?? [];
 
   const ensureMatch = (playerId: string) => {
@@ -78,8 +162,8 @@ const mapScorecard = (scorecard: any, matchId: number) => {
     return next;
   };
 
-  innings.forEach((inning: any) => {
-    (inning.batting || []).forEach((bat: any) => {
+  innings.forEach(inning => {
+    (inning.batting || []).forEach(bat => {
       const playerId = resolvePlayerId(bat?.batsman?.name, bat?.batsman?.altnames);
       if (!playerId) return;
       const match = ensureMatch(playerId);
@@ -94,7 +178,7 @@ const mapScorecard = (scorecard: any, matchId: number) => {
       };
     });
 
-    (inning.bowling || []).forEach((bowl: any) => {
+    (inning.bowling || []).forEach(bowl => {
       const playerId = resolvePlayerId(bowl?.bowler?.name, bowl?.bowler?.altnames);
       if (!playerId) return;
       const match = ensureMatch(playerId);
@@ -108,7 +192,7 @@ const mapScorecard = (scorecard: any, matchId: number) => {
       };
     });
 
-    (inning.catching || []).forEach((field: any) => {
+    (inning.catching || []).forEach(field => {
       const playerId = resolvePlayerId(field?.catcher?.name, field?.catcher?.altnames);
       if (!playerId) return;
       const match = ensureMatch(playerId);
@@ -152,8 +236,8 @@ Deno.serve(async () => {
   const supabase = createClient(supabaseUrl, serviceRole);
 
   try {
-    const current = await fetchCricketData("currentMatches");
-    const matches: Array<any> = current?.data ?? [];
+    const current = await fetchCricketData<CurrentMatch[]>("currentMatches");
+    const matches = current?.data ?? [];
 
     const matched: Array<{ fixtureMatchId: number; apiMatchId: string }> = [];
     matches.forEach(match => {
@@ -164,9 +248,11 @@ Deno.serve(async () => {
       matched.push({ fixtureMatchId: fixtureId, apiMatchId: match.id });
     });
 
-    const allRows: any[] = [];
+    const allRows: MatchStatRow[] = [];
     for (const match of matched) {
-      const scorecard = await fetchCricketData("match_scorecard", { id: match.apiMatchId });
+      const scorecard = await fetchCricketData<ScorecardPayload>("match_scorecard", {
+        id: match.apiMatchId,
+      });
       const rows = mapScorecard(scorecard, match.fixtureMatchId);
       allRows.push(...rows);
     }

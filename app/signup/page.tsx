@@ -37,7 +37,7 @@ export default function SignupPage() {
     return Array.from(unique).sort();
   }, []);
 
-  const STATE_OPTIONS: Record<string, string[]> = {
+  const STATE_OPTIONS = useMemo<Record<string, string[]>>(() => ({
     India: [
       "Andhra Pradesh",
       "Arunachal Pradesh",
@@ -194,25 +194,35 @@ export default function SignupPage() {
       "Ras Al Khaimah",
       "Fujairah",
     ],
-  };
+  }), []);
 
   const stateOptions = useMemo(() => {
     if (!country) return [];
     return STATE_OPTIONS[country] ?? ["Not applicable"];
-  }, [country]);
+  }, [country, STATE_OPTIONS]);
 
   useEffect(() => {
-    if (!country) {
-      setStateName("");
-      return;
-    }
-    if (!stateOptions.length) {
-      setStateName("");
-      return;
-    }
-    if (!stateOptions.includes(stateName)) {
-      setStateName(stateOptions[0] ?? "");
-    }
+    let cancelled = false;
+
+    const syncState = async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      if (!country || !stateOptions.length) {
+        if (stateName) {
+          setStateName("");
+        }
+        return;
+      }
+      if (!stateOptions.includes(stateName)) {
+        setStateName(stateOptions[0] ?? "");
+      }
+    };
+
+    void syncState();
+
+    return () => {
+      cancelled = true;
+    };
   }, [country, stateOptions, stateName]);
 
   useEffect(() => {

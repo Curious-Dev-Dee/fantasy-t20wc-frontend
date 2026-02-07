@@ -244,21 +244,25 @@ alter table public.match_stats enable row level security;
 
 drop policy if exists "Public can view match stats" on public.match_stats;
 drop policy if exists "Authenticated can upsert match stats" on public.match_stats;
+drop policy if exists "Authenticated can update match stats" on public.match_stats;
+drop policy if exists "Admins can upsert match stats" on public.match_stats;
+drop policy if exists "Admins can update match stats" on public.match_stats;
 
 create policy "Public can view match stats" on public.match_stats
   for select
   to public
   using (true);
 
-create policy "Authenticated can upsert match stats" on public.match_stats
+create policy "Admins can upsert match stats" on public.match_stats
   for insert
   to authenticated
-  with check (true);
+  with check (public.is_admin());
 
-create policy "Authenticated can update match stats" on public.match_stats
+create policy "Admins can update match stats" on public.match_stats
   for update
   to authenticated
-  using (true);
+  using (public.is_admin())
+  with check (public.is_admin());
 
 create or replace function public.get_leaderboard_teams()
 returns table (

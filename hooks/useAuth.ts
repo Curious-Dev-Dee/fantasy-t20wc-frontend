@@ -15,20 +15,21 @@ export function useAuth() {
     if (!isSupabaseConfigured || !supabase) {
       return;
     }
+    const client = supabase;
 
     let cancelled = false;
 
     const loadSession = async () => {
-      const { data } = await supabase.auth.getSession();
+      const { data } = await client.auth.getSession();
       if (cancelled) return;
       setSession(data.session ?? null);
       setUser(data.session?.user ?? null);
       setReady(true);
     };
 
-    loadSession();
+    void loadSession();
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(
+    const { data: subscription } = client.auth.onAuthStateChange(
       (_event, nextSession) => {
         if (cancelled) return;
         setSession(nextSession);

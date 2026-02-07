@@ -20,6 +20,8 @@ type MatchStatRow = {
   man_of_the_match: boolean;
 };
 
+type ScorecardData = NonNullable<ScorecardPayload["data"]>;
+
 const toRows = (stats: ReturnType<typeof mapCricketDataScorecard>, matchId: number) => {
   return stats.flatMap(entry =>
     entry.matches.map(match => ({
@@ -94,7 +96,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const scorecard = await cricketDataFetch<ScorecardPayload>("match_scorecard", { id: apiMatchId });
+    const scorecard = await cricketDataFetch<ScorecardData>("match_scorecard", { id: apiMatchId });
     if (!scorecard || scorecard.payload?.status === "failure") continue;
 
     const stats = mapCricketDataScorecard(scorecard.payload, fixture.matchId);

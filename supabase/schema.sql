@@ -275,7 +275,14 @@ language sql
 security definer
 set search_path = public
 as $$
-  select user_id, team_name, working_team, subs_used
+  select
+    user_id,
+    team_name,
+    case
+      when user_id = auth.uid() then working_team
+      else null
+    end as working_team,
+    subs_used
   from public.user_teams;
 $$;
 

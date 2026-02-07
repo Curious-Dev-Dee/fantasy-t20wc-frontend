@@ -18,12 +18,6 @@ export default function LoginPage() {
     if (user) router.replace("/");
   }, [user, ready, router]);
 
-  useEffect(() => {
-    setEmail("");
-    setPassword("");
-    setMessage("");
-  }, []);
-
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setMessage("");

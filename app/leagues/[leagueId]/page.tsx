@@ -167,6 +167,10 @@ export default function LeagueDetailPage() {
     return leagues.find(l => l.id === params.leagueId) || null;
   }, [leagues, params.leagueId, remoteLeague, user, isConfigured]);
 
+  const leagueId = league?.id ?? null;
+  const userId = user?.id ?? null;
+  const remoteOwnerId = remoteLeague?.owner_id ?? null;
+
   const myTeamScore = useMemo(() => {
     const playerRoleMap = new Map(players.map(player => [player.id, player.role]));
     const statsMap = new Map(stats.map(stat => [stat.playerId, stat.matches]));
@@ -312,17 +316,17 @@ export default function LeagueDetailPage() {
     let cancelled = false;
 
     const loadOwner = async () => {
-      if (!league) return;
-      if (user && isConfigured && remoteLeague) {
+      if (!leagueId) return;
+      if (userId && isConfigured && remoteOwnerId) {
         await Promise.resolve();
         if (cancelled) return;
-        setIsOwner(remoteLeague.owner_id === user.id);
+        setIsOwner(remoteOwnerId === userId);
         return;
       }
       const saved = getJSON<string[]>("fantasy_owned_leagues", []);
       await Promise.resolve();
       if (cancelled) return;
-      setIsOwner(saved.includes(league.id));
+      setIsOwner(saved.includes(leagueId));
     };
 
     void loadOwner();
@@ -330,7 +334,7 @@ export default function LeagueDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [league?.id, user?.id, isConfigured, remoteLeague?.owner_id]);
+  }, [leagueId, userId, isConfigured, remoteOwnerId]);
 
   if (loaded && !league) {
     return (

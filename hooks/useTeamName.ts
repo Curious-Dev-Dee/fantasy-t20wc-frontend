@@ -13,9 +13,21 @@ export function useTeamName() {
   const [teamName, setTeamName] = useState(DEFAULT_NAME);
 
   useEffect(() => {
-    const key = scopedKey(STORAGE_KEY, user?.id);
-    const saved = getJSON<string | null>(key, null);
-    if (saved) setTeamName(saved);
+    let cancelled = false;
+
+    const loadSaved = async () => {
+      const key = scopedKey(STORAGE_KEY, user?.id);
+      const saved = getJSON<string | null>(key, null);
+      await Promise.resolve();
+      if (cancelled || !saved) return;
+      setTeamName(saved);
+    };
+
+    void loadSaved();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id]);
 
   useEffect(() => {

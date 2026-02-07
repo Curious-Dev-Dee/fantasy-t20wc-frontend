@@ -155,15 +155,16 @@ export async function POST(req: NextRequest) {
           (a, b) => a.matchId - b.matchId
         );
 
-        await supabase.from("user_teams").upsert({
+        const { error: userTeamError } = await supabase.from("user_teams").upsert({
           user_id: user.user_id,
           working_team: working,
           locked_teams: updatedLocked,
           subs_used: finalSubsUsed,
           updated_at: new Date().toISOString(),
         });
+        if (userTeamError) throw userTeamError;
 
-        await supabase.from("locked_team_history").upsert({
+        const lockRow = {
           user_id: user.user_id,
           match_id: matchId,
           players: locked.players,
@@ -171,7 +172,17 @@ export async function POST(req: NextRequest) {
           vice_captain_id: locked.viceCaptainId,
           subs_used: locked.subsUsed,
           locked_at: new Date().toISOString(),
-        });
+        };
+
+        const [
+          { error: lockHistoryError },
+          { error: lockPublicError },
+        ] = await Promise.all([
+          supabase.from("locked_team_history").upsert(lockRow),
+          supabase.from("locked_team_public").upsert(lockRow),
+        ]);
+        if (lockHistoryError) throw lockHistoryError;
+        if (lockPublicError) throw lockPublicError;
 
         lockedCount += 1;
       }

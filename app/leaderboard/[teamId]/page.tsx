@@ -101,6 +101,18 @@ export default function LeaderboardTeamPage() {
     return new Map(stats.map(stat => [stat.playerId, stat.matches]));
   }, [stats]);
 
+  const lockedThrough = (() => {
+    if (!team) return null;
+    const targetTeamId = team.id;
+    const isMyTeam = Boolean(user && targetTeamId === user.id);
+    if (isMyTeam && myTeam.lockedTeams.length > 0) {
+      return Math.max(...myTeam.lockedTeams.map(lock => lock.matchId));
+    }
+    const rows = lockedHistory.filter(row => row.user_id === targetTeamId);
+    if (rows.length === 0) return null;
+    return Math.max(...rows.map(row => row.match_id));
+  })();
+
   if (loaded && !team) {
     return (
       <div className="min-h-screen bg-[#0B0F1A] text-white p-6">
@@ -151,15 +163,6 @@ export default function LeaderboardTeamPage() {
           playerRoleMap,
           statsMap,
         });
-
-  const lockedThrough = useMemo(() => {
-    if (isMe && myTeam.lockedTeams.length > 0) {
-      return Math.max(...myTeam.lockedTeams.map(lock => lock.matchId));
-    }
-    const rows = lockedHistory.filter(row => row.user_id === team.id);
-    if (rows.length === 0) return null;
-    return Math.max(...rows.map(row => row.match_id));
-  }, [isMe, myTeam.lockedTeams, lockedHistory, team.id]);
 
   const captain = team.captainId
     ? playerMap.get(team.captainId)

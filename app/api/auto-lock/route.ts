@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { fixtures } from "@/data/fixtures";
+import { verifyCronRequest } from "@/utils/server/cronAuth";
 
 const LOCK_WINDOW_MS = 10 * 60 * 1000;
 const MAX_SUBS = {
@@ -74,12 +75,12 @@ const buildLocked = (
 };
 
 export async function POST(req: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET || "";
-  const authHeader = req.headers.get("authorization") || "";
-  const token = authHeader.replace("Bearer ", "").trim();
-
-  if (!cronSecret || token !== cronSecret) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  const cronAuth = verifyCronRequest(req);
+  if (!cronAuth.ok) {
+    return NextResponse.json(
+      { ok: false, error: cronAuth.error },
+      { status: cronAuth.status }
+    );
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";

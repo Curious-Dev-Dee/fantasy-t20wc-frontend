@@ -4,6 +4,7 @@ import { cricketDataFetch } from "@/utils/cricketdataClient";
 import { fixtures } from "@/data/fixtures";
 import { mapCricketDataScorecard, findCricketDataMatchId } from "@/utils/cricketdataMapper";
 import type { ScorecardPayload } from "@/utils/cricketdataMapper";
+import { verifyCronRequest } from "@/utils/server/cronAuth";
 
 const SCORECARD_MINUTES = 30;
 const WINDOW_BEFORE_MS = 2 * 60 * 60 * 1000;
@@ -43,11 +44,12 @@ const isFixtureInWindow = (startTimeUTC: string, now: number) => {
 };
 
 export async function POST(req: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET || "";
-  const authHeader = req.headers.get("authorization") || "";
-  const token = authHeader.replace("Bearer ", "").trim();
-  if (!cronSecret || token !== cronSecret) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  const cronAuth = verifyCronRequest(req);
+  if (!cronAuth.ok) {
+    return NextResponse.json(
+      { ok: false, error: cronAuth.error },
+      { status: cronAuth.status }
+    );
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import type { PlayerMatchStats } from "@/data/matchStats";
-import { playerMatchStats as baseStats } from "@/data/matchStats";
 import { getJSON, setJSON, scopedKey } from "@/utils/storage";
 import { useAuth } from "@/hooks/useAuth";
 import {

@@ -1,11 +1,10 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { players } from "@/data/players";
 import { fixtures } from "@/data/fixtures";
-import type { MatchStats, PlayerMatchStats } from "@/data/matchStats";
 import { useMatchStats } from "@/hooks/useMatchStats";
 import { useTeam } from "@/hooks/useTeam";
 import { teamShort, normalizeTeamName } from "@/utils/teamCodes";
@@ -27,27 +26,7 @@ export default function MatchCenterPage() {
   const [liveMessage, setLiveMessage] = useState<string | null>(null);
   const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
-
-  const matchEntries = useMemo(() => {
-    const rows: {
-      key: string;
-      playerId: string;
-      runs: number;
-      wickets: number;
-    }[] = [];
-    stats.forEach(entry => {
-      entry.matches.forEach(match => {
-        if (match.matchId !== matchId) return;
-        rows.push({
-          key: `${entry.playerId}-${match.matchId}`,
-          playerId: entry.playerId,
-          runs: match.batting?.runs ?? 0,
-          wickets: match.bowling?.wickets ?? 0,
-        });
-      });
-    });
-    return rows;
-  }, [stats, matchId]);
+  const syncingRef = useRef(false);
 
   const playerMap = useMemo(
     () => new Map(players.map(player => [player.id, player])),
@@ -207,14 +186,16 @@ export default function MatchCenterPage() {
     team.workingTeam.players,
     playerMap,
     team.lockedTeams,
+    playerRoleMap,
   ]);
 
   useEffect(() => {
     statsRef.current = stats;
   }, [stats]);
 
-  const syncLive = async () => {
-    if (!fixture || isSyncing) return;
+  const syncLive = useCallback(async () => {
+    if (!fixture || syncingRef.current) return;
+    syncingRef.current = true;
     setIsSyncing(true);
     setLiveMessage(null);
     try {
@@ -251,16 +232,17 @@ export default function MatchCenterPage() {
         error instanceof Error ? error.message : "Live sync failed.";
       setLiveMessage(message);
     } finally {
+      syncingRef.current = false;
       setIsSyncing(false);
     }
-  };
+  }, [fixture, matchId, setStats]);
 
   useEffect(() => {
     if (!fixture) return;
-    syncLive();
+    void syncLive();
     const interval = setInterval(syncLive, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [fixture]);
+  }, [fixture, syncLive]);
 
   if (!fixture) {
     return (
@@ -386,30 +368,6 @@ export default function MatchCenterPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-5 space-y-3">
-          <h2 className="text-lg font-semibold">Match Entries</h2>
-          {matchEntries.length === 0 && (
-            <div className="text-xs text-slate-400">
-              No stats saved for this match yet.
-            </div>
-          )}
-          {matchEntries.map(entry => {
-            const player = players.find(p => p.id === entry.playerId);
-            return (
-              <div
-                key={entry.key}
-                className="border border-white/10 rounded-lg p-3 text-xs"
-              >
-                <div className="text-slate-300 font-medium">
-                  {player?.name || entry.playerId}
-                </div>
-                <div className="text-slate-400">
-                  Runs: {entry.runs} - Wickets: {entry.wickets}
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </div>
     </div>
   );

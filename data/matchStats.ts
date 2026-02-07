@@ -61,7 +61,7 @@ export const playerMatchStats: PlayerMatchStats[] = [
     ],
   },
   {
-    playerId: "jasprit-bumrah-2",
+    playerId: "jasprit-bumrah-12",
     matches: [
       {
         matchId: 1,
@@ -80,7 +80,7 @@ export const playerMatchStats: PlayerMatchStats[] = [
     ],
   },
   {
-    playerId: "jos-buttler-5",
+    playerId: "jos-buttler-85",
     matches: [
       {
         matchId: 1,

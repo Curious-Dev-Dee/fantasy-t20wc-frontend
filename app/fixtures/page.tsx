@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { fixtures, type TournamentPhase } from "@/data/fixtures";
 import { teamShort } from "@/utils/teamCodes";
 import { teamFlag } from "@/utils/teamFlags";
+import { useTournament } from "@/hooks/useTournament";
 
 const phaseLabels: Record<TournamentPhase, string> = {
   PRE_TOURNAMENT: "Pre Tournament",
@@ -14,6 +15,7 @@ const phaseLabels: Record<TournamentPhase, string> = {
 };
 
 export default function FixturesPage() {
+  const { now } = useTournament();
   const [phaseFilter, setPhaseFilter] = useState<TournamentPhase | "ALL">(
     "ALL"
   );
@@ -38,7 +40,6 @@ export default function FixturesPage() {
   }, []);
 
   const filtered = useMemo(() => {
-    const now = Date.now();
     return sorted.filter(match => {
       if (!showAll && new Date(match.startTimeUTC).getTime() < now) {
         return false;
@@ -54,7 +55,7 @@ export default function FixturesPage() {
       }
       return true;
     });
-  }, [sorted, phaseFilter, teamFilter, showAll]);
+  }, [sorted, phaseFilter, teamFilter, showAll, now]);
 
   return (
     <div className="min-h-screen bg-[#0B0F1A] text-white p-6">

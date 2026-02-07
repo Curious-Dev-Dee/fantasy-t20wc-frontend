@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -79,8 +80,6 @@ export default function EditTeamPage() {
   const [activeTab, setActiveTab] = useState<"selected" | "available">(
     "selected"
   );
-  const [showMatchPicker, setShowMatchPicker] = useState(false);
-  const [showTeamPicker, setShowTeamPicker] = useState(false);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [showPlayerSheet, setShowPlayerSheet] = useState(false);
   const [activePlayerId, setActivePlayerId] = useState<string | null>(null);
@@ -257,13 +256,6 @@ export default function EditTeamPage() {
     .filter(Boolean);
 
   const subsUsed = Math.max(playersOut.length, playersIn.length);
-  const subsLeftAfter = Number.isFinite(team.subsLeft)
-    ? Math.max(team.subsLeft - subsUsed, 0)
-    : Infinity;
-
-  const subsLeftAfterLabel = Number.isFinite(subsLeftAfter)
-    ? String(subsLeftAfter)
-    : "Unlimited";
 
   const highlight = (id: string) => {
     setRecentId(id);
@@ -328,10 +320,6 @@ export default function EditTeamPage() {
   const countdown = nextMatchStart
     ? formatCountdown(nextMatchStart - now)
     : "TBD";
-
-  const lockBadgeLabel = tournament.lockWindowMatch
-    ? `Locked for Match #${tournament.lockWindowMatch.matchId}`
-    : null;
 
   return (
     <div className="min-h-screen bg-[#0B0F1A] text-white px-4 sm:px-6 py-4 pb-24">
@@ -475,9 +463,11 @@ export default function EditTeamPage() {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-11 w-11 rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
-                      <img
+                      <Image
                         src="/player-silhouette.svg"
                         alt={player!.name}
+                        width={44}
+                        height={44}
                         className="h-full w-full object-cover"
                       />
                     </div>
@@ -582,9 +572,11 @@ export default function EditTeamPage() {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-11 w-11 rounded-full bg-emerald-500/10 border border-emerald-400/40 overflow-hidden shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
-                      <img
+                      <Image
                         src="/player-silhouette.svg"
                         alt={player.name}
+                        width={44}
+                        height={44}
                         className="h-full w-full object-cover"
                       />
                     </div>
@@ -977,35 +969,6 @@ export default function EditTeamPage() {
           Team saved successfully
         </div>
       )}
-    </div>
-  );
-}
-
-function SummaryCard({
-  label,
-  value,
-  className,
-  compact = false,
-}: {
-  label: string;
-  value: string;
-  className?: string;
-  compact?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-xl border border-white/10 bg-white/5 ${
-        compact ? "px-3 py-2" : "px-4 py-3"
-      } ${className ?? ""}`}
-    >
-      <div className="text-[11px] text-slate-400">{label}</div>
-      <div
-        className={`font-semibold text-white whitespace-nowrap leading-tight ${
-          compact ? "text-sm mt-1" : "text-lg mt-1"
-        }`}
-      >
-        {value}
-      </div>
     </div>
   );
 }

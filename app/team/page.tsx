@@ -1,16 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTeam } from "@/hooks/useTeam";
 import { useTournament } from "@/hooks/useTournament";
 import { useAuth } from "@/hooks/useAuth";
 import { scopedKey } from "@/utils/storage";
-import { teamShort } from "@/utils/teamCodes";
 import { players, type Player } from "@/data/players";
+import type { MatchStats } from "@/data/matchStats";
 import {
-  scoreTeam,
-  scoreLockedTeams,
   scorePlayerBreakdown,
   type PlayerRole,
 } from "@/utils/scoring";
@@ -29,16 +27,14 @@ export default function TeamPage() {
   const lockTipRef = useRef<HTMLButtonElement | null>(null);
   const fieldWrapRef = useRef<HTMLDivElement | null>(null);
 
-  const playerRoleMap = useRef(
-    new Map(players.map(player => [player.id, player.role] as const))
+  const playerRoleMap = useMemo(
+    () => new Map(players.map(player => [player.id, player.role] as const)),
+    []
   );
-  const statsMap = useRef(new Map<string, typeof stats[number]["matches"]>());
-
-  useEffect(() => {
-    statsMap.current = new Map(
-      stats.map(stat => [stat.playerId, stat.matches])
-    );
-  }, [stats]);
+  const statsMap = useMemo(
+    () => new Map(stats.map(stat => [stat.playerId, stat.matches])),
+    [stats]
+  );
 
   useEffect(() => {
     if (!showLockTip) return;
@@ -64,17 +60,14 @@ export default function TeamPage() {
     if (notice != String(tournament.nextMatch.matchId)) return;
     const matchTime = new Date(tournament.nextMatch.startTimeUTC).getTime();
     if (tournament.now < matchTime) return;
-    setShowAutoLockToast(true);
+    const showTimeout = setTimeout(() => setShowAutoLockToast(true), 0);
     localStorage.removeItem(scopedKey("fantasy_lock_notice", user?.id));
-    const timeout = setTimeout(() => setShowAutoLockToast(false), 1500);
-    return () => clearTimeout(timeout);
-  }, [tournament.nextMatch, tournament.now]);
-
-  const lockLabel = tournament.lockWindowMatch
-    ? `Locked for Match #${tournament.lockWindowMatch.matchId} until ${new Date(
-        tournament.lockWindowEndsAt || Date.now()
-      ).toLocaleTimeString()}`
-    : null;
+    const hideTimeout = setTimeout(() => setShowAutoLockToast(false), 1500);
+    return () => {
+      clearTimeout(showTimeout);
+      clearTimeout(hideTimeout);
+    };
+  }, [tournament.nextMatch, tournament.now, user?.id]);
 
   return (
     <div className="min-h-screen bg-[#0B0F1A] text-white px-4 sm:px-6 py-4">
@@ -130,29 +123,29 @@ export default function TeamPage() {
                       title="Wicket Keepers"
                       players={team.selectedPlayers.filter(p => p?.role === "WK")}
                       team={team}
-                      statsMap={statsMap.current}
-                      playerRoleMap={playerRoleMap.current}
+                      statsMap={statsMap}
+                      playerRoleMap={playerRoleMap}
                     />
                     <GroundRow
                       title="Batters"
                       players={team.selectedPlayers.filter(p => p?.role === "BAT")}
                       team={team}
-                      statsMap={statsMap.current}
-                      playerRoleMap={playerRoleMap.current}
+                      statsMap={statsMap}
+                      playerRoleMap={playerRoleMap}
                     />
                     <GroundRow
                       title="All-Rounders"
                       players={team.selectedPlayers.filter(p => p?.role === "AR")}
                       team={team}
-                      statsMap={statsMap.current}
-                      playerRoleMap={playerRoleMap.current}
+                      statsMap={statsMap}
+                      playerRoleMap={playerRoleMap}
                     />
                     <GroundRow
                       title="Bowlers"
                       players={team.selectedPlayers.filter(p => p?.role === "BOWL")}
                       team={team}
-                      statsMap={statsMap.current}
-                      playerRoleMap={playerRoleMap.current}
+                      statsMap={statsMap}
+                      playerRoleMap={playerRoleMap}
                     />
                   </div>
               </div>
@@ -197,7 +190,7 @@ function GroundRow({
   title: string;
   players: Array<Player | undefined>;
   team: ReturnType<typeof useTeam>;
-  statsMap: Map<string, any>;
+  statsMap: Map<string, MatchStats[]>;
   playerRoleMap: Map<string, PlayerRole>;
 }) {
   const validPlayers = players.filter(Boolean);
@@ -213,7 +206,7 @@ function GroundRow({
         {validPlayers.map(player => {
           const id = player!.id;
           const role: PlayerRole = playerRoleMap.get(id) || player!.role;
-          const matches = (statsMap as any).get(id) || [];
+          const matches = statsMap.get(id) || [];
           const isCaptain = team.workingTeam.captainId === id;
           const isVice = team.workingTeam.viceCaptainId === id;
           const breakdown = scorePlayerBreakdown(

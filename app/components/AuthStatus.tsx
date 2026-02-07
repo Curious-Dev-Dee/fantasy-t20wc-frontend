@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase, isSupabaseConfigured } from "@/utils/supabaseClient";
+import { supabase } from "@/utils/supabaseClient";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function AuthStatus() {
@@ -21,7 +21,12 @@ export default function AuthStatus() {
   const handleLogout = async () => {
     setLoading(true);
     try {
-      // Intentionally skip network signOut to avoid fetch failures.
+      if (supabase) {
+        const { error } = await supabase.auth.signOut({ scope: "global" });
+        if (error) {
+          console.error("Logout failed", error.message);
+        }
+      }
     } catch (error) {
       console.error("Logout failed", error);
     } finally {

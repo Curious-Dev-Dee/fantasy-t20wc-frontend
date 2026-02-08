@@ -13,22 +13,16 @@ export default function AuthStatus() {
 
   useEffect(() => {
     if (!ready) return;
-    if (!isConfigured) {
-      console.warn("Supabase is not configured.");
-    }
-  }, [ready, isConfigured]);
+  }, [ready]);
 
   const handleLogout = async () => {
     setLoading(true);
     try {
       if (supabase) {
-        const { error } = await supabase.auth.signOut({ scope: "global" });
-        if (error) {
-          console.error("Logout failed", error.message);
-        }
+        await supabase.auth.signOut({ scope: "global" });
       }
-    } catch (error) {
-      console.error("Logout failed", error);
+    } catch {
+      // Logout errors are handled by redirecting to login
     } finally {
       try {
         const keys = Object.keys(localStorage || {});

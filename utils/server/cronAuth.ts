@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { extractBearerToken } from "./tokenUtils";
 
 const MAX_CLOCK_SKEW_SECONDS = 5 * 60;
 const HEX_SHA256_PATTERN = /^[a-f0-9]{64}$/i;
@@ -8,8 +9,7 @@ type VerifyResult =
   | { ok: false; status: number; error: string };
 
 const getBearerToken = (authorizationHeader: string) => {
-  if (!authorizationHeader.startsWith("Bearer ")) return "";
-  return authorizationHeader.slice("Bearer ".length).trim();
+  return extractBearerToken(authorizationHeader);
 };
 
 const normalizeSignature = (signatureHeader: string) => {

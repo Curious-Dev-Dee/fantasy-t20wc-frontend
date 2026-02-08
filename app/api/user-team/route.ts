@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { players } from "@/data/players";
+import { checkRateLimit } from "@/utils/server/requestGuards";
+import { extractBearerToken } from "@/utils/server/tokenUtils";
 
 const LOCK_WINDOW_MS = 10 * 60 * 1000;
 const MAX_PLAYERS = 11;
@@ -129,9 +131,21 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
-  const token = (req.headers.get("authorization") || "")
-    .replace("Bearer ", "")
-    .trim();
+
+  // Rate limiting
+  const ip = req.headers.get("x-forwarded-for") || "unknown";
+  const rateLimitCheck = checkRateLimit(`get-user-team-${ip}`, {
+    windowMs: 60000,
+    max: 100,
+  });
+  if (!rateLimitCheck.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(rateLimitCheck.retryAfterSeconds) } }
+    );
+  }
+
+  const token = extractBearerToken(req.headers.get("authorization") || "");
   if (!token) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
@@ -162,9 +176,21 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-  const token = (req.headers.get("authorization") || "")
-    .replace("Bearer ", "")
-    .trim();
+
+  // Rate limiting
+  const ip = req.headers.get("x-forwarded-for") || "unknown";
+  const rateLimitCheck = checkRateLimit(`post-user-team-${ip}`, {
+    windowMs: 60000,
+    max: 20,
+  });
+  if (!rateLimitCheck.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(rateLimitCheck.retryAfterSeconds) } }
+    );
+  }
+
+  const token = extractBearerToken(req.headers.get("authorization") || "");
   if (!token) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }

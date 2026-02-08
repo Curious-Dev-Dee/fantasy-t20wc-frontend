@@ -47,7 +47,7 @@ export async function upsertUserTeam(
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    console.error("Supabase upsert failed", error);
+    // Silently handle errors - don't expose in console
+    await response.json().catch(() => ({}));
   }
 }

@@ -8,13 +8,35 @@ const normalizeName = (name: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+const TEAM_NAME_ALIASES: Record<string, string> = {
+  usa: "united states of america",
+  "united states": "united states of america",
+  uae: "united arab emirates",
+  wi: "west indies",
+  nz: "new zealand",
+  sa: "south africa",
+  sl: "sri lanka",
+};
+
+const canonicalTeamName = (name: string) => {
+  const normalized = normalizeName(name);
+  return TEAM_NAME_ALIASES[normalized] ?? normalized;
+};
+
 const playerNameMap = new Map(
   players.map(player => [normalizeName(player.name), player.id])
 );
 
-const resolvePlayerId = (name?: string) => {
-  if (!name) return null;
-  return playerNameMap.get(normalizeName(name)) || null;
+const resolvePlayerId = (name?: string, altnames?: string[]) => {
+  if (!name && (!altnames || altnames.length === 0)) return null;
+  const candidates = [name, ...(altnames || [])]
+    .filter((value): value is string => Boolean(value))
+    .map(normalizeName);
+  for (const candidate of candidates) {
+    const id = playerNameMap.get(candidate);
+    if (id) return id;
+  }
+  return null;
 };
 
 const isDismissed = (dismissalText?: string, dismissal?: string) => {
@@ -44,7 +66,7 @@ export type ScorecardPayload = {
   data?: {
     scorecard?: Array<{
       batting?: Array<{
-        batsman?: { name?: string };
+        batsman?: { name?: string; altnames?: string[] };
         dismissal?: string;
         [key: string]: unknown;
         "dismissal-text"?: string;
@@ -54,14 +76,14 @@ export type ScorecardPayload = {
         "6s"?: number;
       }>;
       bowling?: Array<{
-        bowler?: { name?: string };
+        bowler?: { name?: string; altnames?: string[] };
         o?: number;
         m?: number;
         r?: number;
         w?: number;
       }>;
       catching?: Array<{
-        catcher?: { name?: string };
+        catcher?: { name?: string; altnames?: string[] };
         catch?: number;
         stumped?: number;
         runout?: number;
@@ -79,7 +101,10 @@ export const mapCricketDataScorecard = (
 
   innings.forEach(inning => {
     inning.batting?.forEach(bat => {
-      const playerId = resolvePlayerId(bat.batsman?.name);
+      const playerId = resolvePlayerId(
+        bat.batsman?.name,
+        bat.batsman?.altnames
+      );
       if (!playerId) return;
       const match = ensureMatch(entries, playerId, matchId);
       match.inPlayingXI = true;
@@ -98,7 +123,10 @@ export const mapCricketDataScorecard = (
     });
 
     inning.bowling?.forEach(bowl => {
-      const playerId = resolvePlayerId(bowl.bowler?.name);
+      const playerId = resolvePlayerId(
+        bowl.bowler?.name,
+        bowl.bowler?.altnames
+      );
       if (!playerId) return;
       const match = ensureMatch(entries, playerId, matchId);
       match.inPlayingXI = true;
@@ -113,7 +141,10 @@ export const mapCricketDataScorecard = (
     });
 
     inning.catching?.forEach(field => {
-      const playerId = resolvePlayerId(field.catcher?.name);
+      const playerId = resolvePlayerId(
+        field.catcher?.name,
+        field.catcher?.altnames
+      );
       if (!playerId) return;
       const match = ensureMatch(entries, playerId, matchId);
       match.inPlayingXI = true;
@@ -139,13 +170,23 @@ export const mapCricketDataScorecard = (
 };
 
 export const findCricketDataMatchId = (
-  currentPayload: { data?: Array<{ id?: string; teams?: string[] }> },
+  currentPayload: {
+    data?: Array<{
+      id?: string;
+      teams?: string[];
+      teamInfo?: Array<{ name?: string }>;
+    }>;
+  },
   teams: [string, string]
 ) => {
-  const [teamA, teamB] = teams.map(normalizeName);
+  const [teamA, teamB] = teams.map(canonicalTeamName);
   const matches = currentPayload.data ?? [];
   const found = matches.find(match => {
-    const list = match.teams?.map(normalizeName) ?? [];
+    const teamInfoNames =
+      match.teamInfo
+        ?.map(team => team.name)
+        .filter((name): name is string => Boolean(name)) ?? [];
+    const list = [...(match.teams ?? []), ...teamInfoNames].map(canonicalTeamName);
     return list.includes(teamA) && list.includes(teamB);
   });
   return found?.id ?? null;

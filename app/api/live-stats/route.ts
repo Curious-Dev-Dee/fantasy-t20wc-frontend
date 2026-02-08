@@ -105,7 +105,8 @@ export async function POST(req: NextRequest) {
     const rows = toRows(stats, fixture.matchId);
     if (rows.length === 0) continue;
 
-    await supabase.from("match_stats").upsert(rows);
+    const { error: upsertError } = await supabase.from("match_stats").upsert(rows);
+    if (upsertError) throw upsertError;
     updatedMatches += 1;
     updatedRows += rows.length;
   }

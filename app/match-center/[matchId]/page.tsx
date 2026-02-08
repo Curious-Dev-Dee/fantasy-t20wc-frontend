@@ -26,9 +26,6 @@ export default function MatchCenterPage() {
   const team = useTeam();
   const statsRef = useRef(stats);
   const [liveMessage, setLiveMessage] = useState<string | null>(null);
-  const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const syncingRef = useRef(false);
 
   const playerMap = useMemo(
     () => new Map(players.map(player => [player.id, player])),
@@ -195,81 +192,9 @@ export default function MatchCenterPage() {
     statsRef.current = stats;
   }, [stats]);
 
-  const syncLive = useCallback(async () => {
-    if (!fixture || syncingRef.current) return;
-    const accessToken = session?.access_token;
-    if (!accessToken) {
-      setLiveMessage(
-        isConfigured
-          ? "Please sign in to sync live stats."
-          : "Live sync requires auth configuration."
-      );
-      return;
-    }
+  // Scores are updated via CRON job only - no manual syncing
 
-    syncingRef.current = true;
-    setIsSyncing(true);
-    setLiveMessage(null);
-    try {
-      const headers = {
-        Authorization: `Bearer ${accessToken}`,
-      };
-
-      const currentRes = await fetch("/api/cricketdata/current", { headers });
-      if (currentRes.status === 429) {
-        const retryAfter = Number(currentRes.headers.get("Retry-After") || 60);
-        setLiveMessage(`Rate limited. Try again in ${retryAfter}s.`);
-        return;
-      }
-      const currentJson = await currentRes.json();
-      if (!currentRes.ok || !currentJson.ok) {
-        throw new Error(currentJson.error || "Failed to load live matches.");
-      }
-      const matchUuid = findCricketDataMatchId(currentJson.payload, [
-        fixture.teams[0],
-        fixture.teams[1],
-      ]);
-      if (!matchUuid) {
-        setLiveMessage("No live match found for this fixture yet.");
-        return;
-      }
-      const scoreRes = await fetch(
-        `/api/cricketdata/scorecard?id=${matchUuid}`,
-        { headers }
-      );
-      if (scoreRes.status === 429) {
-        const retryAfter = Number(scoreRes.headers.get("Retry-After") || 60);
-        setLiveMessage(`Rate limited. Try again in ${retryAfter}s.`);
-        return;
-      }
-      const scoreJson = await scoreRes.json();
-      if (!scoreRes.ok || !scoreJson.ok) {
-        throw new Error(scoreJson.error || "Failed to load scorecard.");
-      }
-      const mapped = mapCricketDataScorecard(scoreJson.payload, matchId);
-      if (mapped.length === 0) {
-        setLiveMessage("Live score loaded, but no players matched yet.");
-        return;
-      }
-      setStats(mergeMatchStats(statsRef.current, mapped, matchId));
-      setLastSyncAt(new Date());
-      setLiveMessage(`Synced live stats (${matchUuid.slice(0, 8)}).`);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Live sync failed.";
-      setLiveMessage(message);
-    } finally {
-      syncingRef.current = false;
-      setIsSyncing(false);
-    }
-  }, [fixture, matchId, setStats, session?.access_token, isConfigured]);
-
-  useEffect(() => {
-    if (!fixture) return;
-    void syncLive();
-    const interval = setInterval(syncLive, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [fixture, syncLive]);
+  // Scores are updated via CRON job every 1 hour - no manual syncing needed
 
   if (!fixture) {
     return (
@@ -325,18 +250,8 @@ export default function MatchCenterPage() {
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="text-slate-400">
-              Live updates every 5 minutes
-              {lastSyncAt
-                ? ` · Last sync ${lastSyncAt.toLocaleTimeString()}`
-                : ""}
+              Scores update automatically via CRON job every 1 hour
             </div>
-            <button
-              onClick={syncLive}
-              disabled={isSyncing}
-              className="rounded bg-indigo-600 px-3 py-1 text-xs disabled:opacity-60"
-            >
-              {isSyncing ? "Syncing..." : "Sync Live"}
-            </button>
           </div>
           {liveMessage && (
             <div className="text-[11px] text-slate-400">{liveMessage}</div>

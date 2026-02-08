@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { leagues as baseLeagues, League } from "@/data/leagues";
 import { useTournament } from "@/hooks/useTournament";
@@ -27,6 +28,7 @@ type CreatedLeague = {
 };
 
 export default function LeaguesPage() {
+  const router = useRouter();
   const tournament = useTournament();
   const team = useTeam();
   const { profile } = useProfile();
@@ -244,7 +246,7 @@ export default function LeaguesPage() {
           ? joinedLeagueIds
           : [league.id, ...joinedLeagueIds];
         setJoinedLeagueIds(nextJoined);
-        window.location.href = `/leagues/${league.id}`;
+        router.push(`/leagues/${league.id}`);
       };
       joinRemote();
       return;
@@ -262,7 +264,7 @@ export default function LeaguesPage() {
           ? joinedLeagueIds
           : [league.id, ...joinedLeagueIds];
         persistJoined(nextJoined);
-        window.location.href = `/leagues/${league.id}`;
+        router.push(`/leagues/${league.id}`);
         return;
       }
     }

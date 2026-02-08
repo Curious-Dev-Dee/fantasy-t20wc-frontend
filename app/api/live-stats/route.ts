@@ -54,7 +54,6 @@ export async function POST(req: NextRequest) {
   /**
    * 🔁 TEMP BACKFILL MODE
    * Process ALL matches whose start time is in the past
-   * (matches 1–6)
    */
   const activeFixtures = fixtures.filter(
     (f) => new Date(f.startTimeUTC).getTime() < now
@@ -68,16 +67,15 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // 🏏 Fetch live / recent matches from scraper
+  // 🏏 Fetch live matches (DEBUG HARD FAIL)
   let matchesData;
   try {
     matchesData = await fetchLiveMatches();
-  } catch (e) {
-    console.error("fetchLiveMatches failed", e);
-    return NextResponse.json(
-      { ok: false, error: "Failed to fetch live matches" },
-      { status: 500 }
-    );
+  } catch (e: any) {
+    console.error("🔥 fetchLiveMatches FAILED");
+    console.error(e?.message);
+    console.error(e);
+    throw e; // 👈 force Vercel to show stack trace
   }
 
   let updatedMatches = 0;
@@ -86,7 +84,7 @@ export async function POST(req: NextRequest) {
   for (const fixture of activeFixtures) {
     // 🔍 Match fixture ↔ scraped match
     const match = matchesData.matches?.find((m: any) => {
-      if (!m.teams) return false;
+      if (!m?.teams) return false;
       const apiTeams = m.teams.map((t: string) => t.toLowerCase());
       return fixture.teams.every((t) =>
         apiTeams.includes(t.toLowerCase())
@@ -109,15 +107,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 📊 Fetch scorecard
+    // 📊 Fetch scorecard (DEBUG HARD FAIL)
     let scorecardData;
     try {
       scorecardData = await fetchScorecard(match.id);
-    } catch {
-      continue;
+    } catch (e: any) {
+      console.error("🔥 fetchScorecard FAILED for match:", match.id);
+      console.error(e?.message);
+      console.error(e);
+      throw e; // 👈 force Vercel to show stack trace
     }
 
-    if (!scorecardData?.scorecard) continue;
+    if (!scorecardData?.scorecard) {
+      console.error("⚠️ No scorecard returned for match:", match.id);
+      continue;
+    }
 
     // 💾 Store RAW scorecard
     const { error: rawErr } = await supabase
@@ -129,13 +133,25 @@ export async function POST(req: NextRequest) {
         updated_at: new Date().toISOString(),
       });
 
-    if (rawErr) throw rawErr;
+    if (rawErr) {
+      console.error("🔥 match_scorecards upsert failed");
+      console.error(rawErr);
+      throw rawErr;
+    }
 
-    // 🔄 Adapt → player match stats
-    const playerStats = (await adaptScorecardToMatchStats(
-      fixture.matchId,
-      scorecardData.scorecard
-    )) as PlayerMatchStatRow[];
+    // 🔄 Adapt → player match stats (DEBUG HARD FAIL)
+    let playerStats: PlayerMatchStatRow[];
+    try {
+      playerStats = (await adaptScorecardToMatchStats(
+        fixture.matchId,
+        scorecardData.scorecard
+      )) as PlayerMatchStatRow[];
+    } catch (e: any) {
+      console.error("🔥 adaptScorecardToMatchStats FAILED");
+      console.error(e?.message);
+      console.error(e);
+      throw e;
+    }
 
     // 💾 Upsert each player stat
     for (const stats of playerStats) {
@@ -153,7 +169,12 @@ export async function POST(req: NextRequest) {
           updated_at: new Date().toISOString(),
         });
 
-      if (statErr) throw statErr;
+      if (statErr) {
+        console.error("🔥 match_stats upsert FAILED");
+        console.error(statErr);
+        throw statErr;
+      }
+
       updatedPlayers++;
     }
 

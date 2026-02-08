@@ -34,17 +34,17 @@ export function parseRawScorecard(
   let currentInnings: ParsedInnings | null = null;
   let mode: "batting" | "bowling" | null = null;
 
-  // 👇 IMPORTANT: index-based loop (needed for lookahead)
+  // index-based loop (needed for lookahead)
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
     // ================================
-    // 🏏 Detect innings (Cricbuzz style)
+    // 🏏 Detect innings (Cricbuzz format)
     // ================================
     if (
-      /^[A-Za-z\s]+$/.test(line) &&            // team name
-      lines[i + 1]?.includes("(") &&            // score line e.g. 163-6 (20 Ov)
-      lines[i + 2] === "Batter"                 // batting table starts
+      /^[A-Za-z\s]+$/.test(line) &&            // Team name
+      lines[i + 1]?.includes("(") &&            // Score line e.g. 163-6 (20 Ov)
+      lines[i + 2] === "Batter"
     ) {
       if (currentInnings) innings.push(currentInnings);
 
@@ -58,7 +58,7 @@ export function parseRawScorecard(
     }
 
     // ================================
-    // 🔁 Switch parsing modes
+    // 🔁 Switch modes
     // ================================
     if (line === "Batter") {
       mode = "batting";
@@ -76,10 +76,21 @@ export function parseRawScorecard(
     // 🏏 Batting rows
     // ================================
     if (mode === "batting") {
+      // skip column headers
+      if (
+        line === "R" ||
+        line === "B" ||
+        line === "4s" ||
+        line === "6s" ||
+        line === "SR"
+      ) {
+        continue;
+      }
+
       // Example:
-      // Kusal Mendis (wk) not out 56 43 5 0 130.23
+      // Pathum Nissanka c Stirling b Dockrell 24 23 1 1 104.35
       const match = line.match(
-        /^(.+?)\s+(not out|c |b |lbw |run out|st ).*?(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/
+        /^(.+?)\s+(not out|c .*?|b .*?|lbw .*?|run out .*?|st .*?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/
       );
 
       if (!match) continue;
@@ -101,8 +112,21 @@ export function parseRawScorecard(
     // 🎯 Bowling rows
     // ================================
     if (mode === "bowling") {
+      // skip column headers
+      if (
+        line === "O" ||
+        line === "M" ||
+        line === "R" ||
+        line === "W" ||
+        line === "NB" ||
+        line === "WD" ||
+        line === "ECO"
+      ) {
+        continue;
+      }
+
       // Example:
-      // Maheesh Theekshana 4 0 23 3 5.80
+      // Matthew Humphreys 4 0 44 0
       const match = line.match(
         /^(.+?)\s+(\d+(\.\d+)?)\s+(\d+)\s+(\d+)\s+(\d+)/
       );

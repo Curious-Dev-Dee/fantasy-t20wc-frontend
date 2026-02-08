@@ -26,13 +26,6 @@ type PlayerMatchStatRow = {
 };
 
 const SCORECARD_MINUTES = 60;
-const WINDOW_BEFORE_MS = 2 * 60 * 60 * 1000;
-const WINDOW_AFTER_MS = 6 * 60 * 60 * 1000;
-
-const isFixtureInWindow = (startTimeUTC: string, now: number) => {
-  const start = new Date(startTimeUTC).getTime();
-  return now >= start - WINDOW_BEFORE_MS && now <= start + WINDOW_AFTER_MS;
-};
 
 export async function POST(req: NextRequest) {
   // 🔐 Cron auth
@@ -58,20 +51,24 @@ export async function POST(req: NextRequest) {
   const supabase = createClient(supabaseUrl, serviceRole);
   const now = Date.now();
 
-  // ⏱ Active fixtures
-  const activeFixtures = fixtures.filter((f) =>
-    isFixtureInWindow(f.startTimeUTC, now)
+  /**
+   * 🔁 TEMP BACKFILL MODE
+   * Process ALL matches whose start time is in the past
+   * (matches 1–6)
+   */
+  const activeFixtures = fixtures.filter(
+    (f) => new Date(f.startTimeUTC).getTime() < now
   );
 
   if (activeFixtures.length === 0) {
     return NextResponse.json({
       ok: true,
       skipped: true,
-      reason: "no-active-fixtures",
+      reason: "no-past-fixtures",
     });
   }
 
-  // 🏏 Fetch live matches
+  // 🏏 Fetch live / recent matches from scraper
   let matchesData;
   try {
     matchesData = await fetchLiveMatches();
@@ -87,7 +84,7 @@ export async function POST(req: NextRequest) {
   let updatedPlayers = 0;
 
   for (const fixture of activeFixtures) {
-    // 🔍 Match fixture ↔ live match
+    // 🔍 Match fixture ↔ scraped match
     const match = matchesData.matches?.find((m: any) => {
       if (!m.teams) return false;
       const apiTeams = m.teams.map((t: string) => t.toLowerCase());
@@ -98,13 +95,11 @@ export async function POST(req: NextRequest) {
 
     if (!match) continue;
 
-    // ⏱ Rate limit per match
+    // ⏱ Rate-limit per match
     const { data: lastRow } = await supabase
       .from("match_scorecards")
       .select("updated_at")
       .eq("match_id", fixture.matchId)
-      .order("updated_at", { ascending: false })
-      .limit(1)
       .maybeSingle();
 
     if (lastRow?.updated_at) {
@@ -136,13 +131,13 @@ export async function POST(req: NextRequest) {
 
     if (rawErr) throw rawErr;
 
-    // 🔄 Adapt → player match stats (CAST for TS)
+    // 🔄 Adapt → player match stats
     const playerStats = (await adaptScorecardToMatchStats(
       fixture.matchId,
       scorecardData.scorecard
     )) as PlayerMatchStatRow[];
 
-    // 💾 Upsert each player
+    // 💾 Upsert each player stat
     for (const stats of playerStats) {
       const { error: statErr } = await supabase
         .from("match_stats")

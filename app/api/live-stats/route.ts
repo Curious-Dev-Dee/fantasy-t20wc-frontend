@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { fixtures } from "@/data/fixtures";
@@ -7,6 +9,21 @@ import {
   fetchScorecard,
 } from "@/utils/server/scraperClient";
 import { adaptScorecardToMatchStats } from "@/utils/scorecardAdapter";
+
+/**
+ * Loose server-side type for ingestion.
+ * We keep this flexible because scraped data can be partial.
+ */
+type PlayerMatchStatRow = {
+  playerId: string;
+  matchId: number;
+  inPlayingXI: boolean;
+  impactPlayer: boolean;
+  batting?: any;
+  bowling?: any;
+  fielding?: any;
+  manOfTheMatch?: boolean;
+};
 
 const SCORECARD_MINUTES = 60;
 const WINDOW_BEFORE_MS = 2 * 60 * 60 * 1000;
@@ -27,7 +44,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 🔑 Supabase
+  // 🔑 Supabase config
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
@@ -41,7 +58,7 @@ export async function POST(req: NextRequest) {
   const supabase = createClient(supabaseUrl, serviceRole);
   const now = Date.now();
 
-  // ⏱ active fixtures
+  // ⏱ Active fixtures
   const activeFixtures = fixtures.filter((f) =>
     isFixtureInWindow(f.startTimeUTC, now)
   );
@@ -54,11 +71,12 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // 🏏 fetch live matches
+  // 🏏 Fetch live matches
   let matchesData;
   try {
     matchesData = await fetchLiveMatches();
-  } catch {
+  } catch (e) {
+    console.error("fetchLiveMatches failed", e);
     return NextResponse.json(
       { ok: false, error: "Failed to fetch live matches" },
       { status: 500 }
@@ -69,7 +87,7 @@ export async function POST(req: NextRequest) {
   let updatedPlayers = 0;
 
   for (const fixture of activeFixtures) {
-    // 🔍 match fixture ↔ live match
+    // 🔍 Match fixture ↔ live match
     const match = matchesData.matches?.find((m: any) => {
       if (!m.teams) return false;
       const apiTeams = m.teams.map((t: string) => t.toLowerCase());
@@ -80,7 +98,7 @@ export async function POST(req: NextRequest) {
 
     if (!match) continue;
 
-    // ⏱ rate-limit
+    // ⏱ Rate limit per match
     const { data: lastRow } = await supabase
       .from("match_scorecards")
       .select("updated_at")
@@ -96,7 +114,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 📊 fetch scorecard
+    // 📊 Fetch scorecard
     let scorecardData;
     try {
       scorecardData = await fetchScorecard(match.id);
@@ -106,7 +124,7 @@ export async function POST(req: NextRequest) {
 
     if (!scorecardData?.scorecard) continue;
 
-    // 💾 store RAW scorecard
+    // 💾 Store RAW scorecard
     const { error: rawErr } = await supabase
       .from("match_scorecards")
       .upsert({
@@ -118,17 +136,18 @@ export async function POST(req: NextRequest) {
 
     if (rawErr) throw rawErr;
 
-    // 🔄 ADAPT → MatchStats
-    const matchStats = await adaptScorecardToMatchStats(
+    // 🔄 Adapt → player match stats (CAST for TS)
+    const playerStats = (await adaptScorecardToMatchStats(
       fixture.matchId,
       scorecardData.scorecard
-    );
+    )) as PlayerMatchStatRow[];
 
-    // 💾 upsert player match stats
-    for (const stats of matchStats) {
+    // 💾 Upsert each player
+    for (const stats of playerStats) {
       const { error: statErr } = await supabase
         .from("match_stats")
         .upsert({
+          player_id: stats.playerId,
           match_id: stats.matchId,
           in_playing_xi: stats.inPlayingXI,
           impact_player: stats.impactPlayer,

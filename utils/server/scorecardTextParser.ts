@@ -42,8 +42,8 @@ export function parseRawScorecard(
     // 🏏 Detect innings (Cricbuzz format)
     // ================================
     if (
-      /^[A-Za-z\s]+$/.test(line) &&            // Team name
-      lines[i + 1]?.includes("(") &&            // Score line e.g. 163-6 (20 Ov)
+      /^[A-Za-z\s]+$/.test(line) &&          // Team name
+      lines[i + 1]?.includes("(") &&          // Score line e.g. 163-6 (20 Ov)
       lines[i + 2] === "Batter"
     ) {
       if (currentInnings) innings.push(currentInnings);
@@ -76,19 +76,14 @@ export function parseRawScorecard(
     // 🏏 Batting rows
     // ================================
     if (mode === "batting") {
-      // skip column headers
-      if (
-        line === "R" ||
-        line === "B" ||
-        line === "4s" ||
-        line === "6s" ||
-        line === "SR"
-      ) {
+      // Skip column headers
+      if (["R", "B", "4s", "6s", "SR"].includes(line)) {
         continue;
       }
 
       // Example:
       // Pathum Nissanka c Stirling b Dockrell 24 23 1 1 104.35
+      // Kusal Mendis not out 56 43 5 0 130.23
       const match = line.match(
         /^(.+?)\s+(not out|c .*?|b .*?|lbw .*?|run out .*?|st .*?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/
       );
@@ -112,16 +107,8 @@ export function parseRawScorecard(
     // 🎯 Bowling rows
     // ================================
     if (mode === "bowling") {
-      // skip column headers
-      if (
-        line === "O" ||
-        line === "M" ||
-        line === "R" ||
-        line === "W" ||
-        line === "NB" ||
-        line === "WD" ||
-        line === "ECO"
-      ) {
+      // Skip column headers
+      if (["O", "M", "R", "W", "NB", "WD", "ECO"].includes(line)) {
         continue;
       }
 

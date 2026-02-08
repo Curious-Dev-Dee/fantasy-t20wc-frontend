@@ -34,13 +34,22 @@ export function parseRawScorecard(
   let currentInnings: ParsedInnings | null = null;
   let mode: "batting" | "bowling" | null = null;
 
-  for (const line of lines) {
-    // ---- Detect innings start ----
-    if (line.endsWith("Innings")) {
+  // 👇 IMPORTANT: index-based loop (needed for lookahead)
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // ================================
+    // 🏏 Detect innings (Cricbuzz style)
+    // ================================
+    if (
+      /^[A-Za-z\s]+$/.test(line) &&            // team name
+      lines[i + 1]?.includes("(") &&            // score line e.g. 163-6 (20 Ov)
+      lines[i + 2] === "Batter"                 // batting table starts
+    ) {
       if (currentInnings) innings.push(currentInnings);
 
       currentInnings = {
-        team: line.replace(" Innings", "").trim(),
+        team: line.trim(),
         batting: [],
         bowling: [],
       };
@@ -48,7 +57,9 @@ export function parseRawScorecard(
       continue;
     }
 
-    // ---- Switch modes ----
+    // ================================
+    // 🔁 Switch parsing modes
+    // ================================
     if (line === "Batter") {
       mode = "batting";
       continue;
@@ -61,8 +72,12 @@ export function parseRawScorecard(
 
     if (!currentInnings || !mode) continue;
 
-    // ---- Batting ----
+    // ================================
+    // 🏏 Batting rows
+    // ================================
     if (mode === "batting") {
+      // Example:
+      // Kusal Mendis (wk) not out 56 43 5 0 130.23
       const match = line.match(
         /^(.+?)\s+(not out|c |b |lbw |run out|st ).*?(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/
       );
@@ -82,8 +97,12 @@ export function parseRawScorecard(
       });
     }
 
-    // ---- Bowling ----
+    // ================================
+    // 🎯 Bowling rows
+    // ================================
     if (mode === "bowling") {
+      // Example:
+      // Maheesh Theekshana 4 0 23 3 5.80
       const match = line.match(
         /^(.+?)\s+(\d+(\.\d+)?)\s+(\d+)\s+(\d+)\s+(\d+)/
       );

@@ -1,42 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { cricketDataFetch } from "@/utils/cricketdataClient";
 import { fixtures } from "@/data/fixtures";
-import { mapCricketDataScorecard, findCricketDataMatchId } from "@/utils/cricketdataMapper";
-import type { ScorecardPayload } from "@/utils/cricketdataMapper";
 import { verifyCronRequest } from "@/utils/server/cronAuth";
+import {
+  fetchLiveMatches,
+  fetchScorecard,
+} from "@/utils/server/scraperClient";
+import { adaptScorecardToMatchStats } from "@/utils/scorecardAdapter";
 
-const SCORECARD_MINUTES = 30;
+const SCORECARD_MINUTES = 60;
 const WINDOW_BEFORE_MS = 2 * 60 * 60 * 1000;
 const WINDOW_AFTER_MS = 6 * 60 * 60 * 1000;
-
-type MatchStatRow = {
-  player_id: string;
-  match_id: number;
-  in_playing_xi: boolean;
-  impact_player: boolean;
-  batting: Record<string, unknown> | null;
-  bowling: Record<string, unknown> | null;
-  fielding: Record<string, unknown> | null;
-  man_of_the_match: boolean;
-};
-
-type ScorecardData = NonNullable<ScorecardPayload["data"]>;
-
-const toRows = (stats: ReturnType<typeof mapCricketDataScorecard>, matchId: number) => {
-  return stats.flatMap(entry =>
-    entry.matches.map(match => ({
-      player_id: entry.playerId,
-      match_id: matchId,
-      in_playing_xi: match.inPlayingXI,
-      impact_player: match.impactPlayer,
-      batting: match.batting ?? null,
-      bowling: match.bowling ?? null,
-      fielding: match.fielding ?? null,
-      man_of_the_match: Boolean(match.manOfTheMatch),
-    }))
-  ) as MatchStatRow[];
-};
 
 const isFixtureInWindow = (startTimeUTC: string, now: number) => {
   const start = new Date(startTimeUTC).getTime();
@@ -44,6 +18,7 @@ const isFixtureInWindow = (startTimeUTC: string, now: number) => {
 };
 
 export async function POST(req: NextRequest) {
+  // 🔐 Cron auth
   const cronAuth = verifyCronRequest(req);
   if (!cronAuth.ok) {
     return NextResponse.json(
@@ -52,39 +27,62 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // 🔑 Supabase
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+
   if (!supabaseUrl || !serviceRole) {
     return NextResponse.json(
-      { ok: false, error: "Missing service role configuration" },
-      { status: 500 }
-    );
-  }
-
-  const now = Date.now();
-  const activeFixtures = fixtures.filter(f => isFixtureInWindow(f.startTimeUTC, now));
-  if (activeFixtures.length === 0) {
-    return NextResponse.json({ ok: true, skipped: true, reason: "no-fixtures-window" });
-  }
-
-  const current = await cricketDataFetch<{ id?: string; teams?: string[] }[]>("currentMatches");
-  if (!current) {
-    return NextResponse.json(
-      { ok: false, error: "CRICKETDATA_API_KEY is missing" },
+      { ok: false, error: "Missing Supabase service role config" },
       { status: 500 }
     );
   }
 
   const supabase = createClient(supabaseUrl, serviceRole);
+  const now = Date.now();
+
+  // ⏱ active fixtures
+  const activeFixtures = fixtures.filter((f) =>
+    isFixtureInWindow(f.startTimeUTC, now)
+  );
+
+  if (activeFixtures.length === 0) {
+    return NextResponse.json({
+      ok: true,
+      skipped: true,
+      reason: "no-active-fixtures",
+    });
+  }
+
+  // 🏏 fetch live matches
+  let matchesData;
+  try {
+    matchesData = await fetchLiveMatches();
+  } catch {
+    return NextResponse.json(
+      { ok: false, error: "Failed to fetch live matches" },
+      { status: 500 }
+    );
+  }
+
   let updatedMatches = 0;
-  let updatedRows = 0;
+  let updatedPlayers = 0;
 
   for (const fixture of activeFixtures) {
-    const apiMatchId = findCricketDataMatchId(current.payload, fixture.teams);
-    if (!apiMatchId) continue;
+    // 🔍 match fixture ↔ live match
+    const match = matchesData.matches?.find((m: any) => {
+      if (!m.teams) return false;
+      const apiTeams = m.teams.map((t: string) => t.toLowerCase());
+      return fixture.teams.every((t) =>
+        apiTeams.includes(t.toLowerCase())
+      );
+    });
 
+    if (!match) continue;
+
+    // ⏱ rate-limit
     const { data: lastRow } = await supabase
-      .from("match_stats")
+      .from("match_scorecards")
       .select("updated_at")
       .eq("match_id", fixture.matchId)
       .order("updated_at", { ascending: false })
@@ -98,22 +96,59 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const scorecard = await cricketDataFetch<ScorecardData>("match_scorecard", { id: apiMatchId });
-    if (!scorecard || scorecard.payload?.status === "failure") continue;
+    // 📊 fetch scorecard
+    let scorecardData;
+    try {
+      scorecardData = await fetchScorecard(match.id);
+    } catch {
+      continue;
+    }
 
-    const stats = mapCricketDataScorecard(scorecard.payload, fixture.matchId);
-    const rows = toRows(stats, fixture.matchId);
-    if (rows.length === 0) continue;
+    if (!scorecardData?.scorecard) continue;
 
-    const { error: upsertError } = await supabase.from("match_stats").upsert(rows);
-    if (upsertError) throw upsertError;
-    updatedMatches += 1;
-    updatedRows += rows.length;
+    // 💾 store RAW scorecard
+    const { error: rawErr } = await supabase
+      .from("match_scorecards")
+      .upsert({
+        match_id: fixture.matchId,
+        source_match_id: match.id,
+        raw_scorecard: scorecardData.scorecard,
+        updated_at: new Date().toISOString(),
+      });
+
+    if (rawErr) throw rawErr;
+
+    // 🔄 ADAPT → MatchStats
+    const matchStats = await adaptScorecardToMatchStats(
+      fixture.matchId,
+      scorecardData.scorecard
+    );
+
+    // 💾 upsert player match stats
+    for (const stats of matchStats) {
+      const { error: statErr } = await supabase
+        .from("match_stats")
+        .upsert({
+          match_id: stats.matchId,
+          in_playing_xi: stats.inPlayingXI,
+          impact_player: stats.impactPlayer,
+          batting: stats.batting ?? null,
+          bowling: stats.bowling ?? null,
+          fielding: stats.fielding ?? null,
+          man_of_the_match: stats.manOfTheMatch ?? false,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (statErr) throw statErr;
+      updatedPlayers++;
+    }
+
+    updatedMatches++;
   }
 
   return NextResponse.json({
     ok: true,
-    matches: updatedMatches,
-    rows: updatedRows,
+    matchesUpdated: updatedMatches,
+    playersUpdated: updatedPlayers,
   });
 }

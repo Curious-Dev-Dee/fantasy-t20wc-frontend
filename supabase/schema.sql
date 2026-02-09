@@ -288,6 +288,76 @@ $$;
 
 grant execute on function public.get_leaderboard_teams() to authenticated;
 
+create table if not exists public.player_match_points (
+  player_id text not null,
+  match_id integer not null,
+  points numeric not null default 0,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  primary key (player_id, match_id)
+);
+
+alter table public.player_match_points enable row level security;
+
+drop policy if exists "Admins can upsert player points" on public.player_match_points;
+drop policy if exists "Authenticated can view player points" on public.player_match_points;
+
+create policy "Admins can upsert player points" on public.player_match_points
+  for all
+  to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+create policy "Authenticated can view player points" on public.player_match_points
+  for select
+  to authenticated
+  using (true);
+
+alter table public.user_match_points
+  alter column points type numeric using points::numeric;
+
+create or replace function public.get_leaderboard_totals()
+returns table (
+  user_id uuid,
+  team_name text,
+  total_points numeric
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    ut.user_id,
+    coalesce(up.team_name, ut.team_name, 'Team') as team_name,
+    coalesce(sum(ump.points), 0) as total_points
+  from public.user_teams ut
+  left join public.user_profiles up on up.user_id = ut.user_id
+  left join public.user_match_points ump on ump.user_id = ut.user_id
+  group by ut.user_id, up.team_name, ut.team_name;
+$$;
+
+grant execute on function public.get_leaderboard_totals() to authenticated;
+
+create or replace function public.get_users_total_points(p_user_ids uuid[])
+returns table (
+  user_id uuid,
+  total_points numeric
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    ut.user_id,
+    coalesce(sum(ump.points), 0) as total_points
+  from public.user_teams ut
+  left join public.user_match_points ump on ump.user_id = ut.user_id
+  where ut.user_id = any(p_user_ids)
+  group by ut.user_id;
+$$;
+
+grant execute on function public.get_users_total_points(uuid[]) to authenticated;
+
 create table if not exists public.locked_team_history (
   user_id uuid not null references auth.users (id) on delete cascade,
   match_id integer not null,

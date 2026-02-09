@@ -3,13 +3,10 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { fixtures } from "@/data/fixtures";
-import { players } from "@/data/players";
 import { useAuth } from "@/hooks/useAuth";
-import { useMatchStats } from "@/hooks/useMatchStats";
 import { useTournament } from "@/hooks/useTournament";
 import { isAdminEmail } from "@/utils/admin";
 import { teamShort } from "@/utils/teamCodes";
-import { scoreMatchBase, type PlayerRole } from "@/utils/scoring";
 import { fetchAllLockHistory, type LockedHistoryRow } from "@/utils/lockHistoryPersistence";
 
 const MATCH_DURATION_MS = 3.5 * 60 * 60 * 1000;
@@ -17,18 +14,11 @@ const MATCH_DURATION_MS = 3.5 * 60 * 60 * 1000;
 export default function AdminOpsPage() {
   const { now } = useTournament();
   const { user, ready } = useAuth();
-  const { stats } = useMatchStats();
   const [selectedMatchId, setSelectedMatchId] = useState<number>(
     fixtures[0]?.matchId ?? 1
   );
-  const [playerSearch, setPlayerSearch] = useState("");
   const [lockedHistory, setLockedHistory] = useState<LockedHistoryRow[]>([]);
   const [lockedLoaded, setLockedLoaded] = useState(false);
-
-  const playerMap = useMemo(
-    () => new Map(players.map(player => [player.id, player])),
-    []
-  );
 
   const fixturesById = useMemo(
     () => new Map(fixtures.map(fixture => [fixture.matchId, fixture])),
@@ -48,60 +38,9 @@ export default function AdminOpsPage() {
     return "COMPLETED";
   };
 
-  const matchStats = useMemo(() => {
-    const list: {
-      playerId: string;
-      match: (typeof stats)[number]["matches"][number];
-    }[] = [];
-    stats.forEach(entry => {
-      entry.matches.forEach(match => {
-        if (match.matchId === selectedMatchId) {
-          list.push({ playerId: entry.playerId, match });
-        }
-      });
-    });
-    return list;
-  }, [stats, selectedMatchId]);
-
-  const matchPlayers = useMemo(() => {
-    return matchStats
-      .map(entry => ({
-        player: playerMap.get(entry.playerId),
-        match: entry.match,
-      }))
-      .filter(entry => entry.player);
-  }, [matchStats, playerMap]);
-
-  const playingXI = matchPlayers.filter(entry => entry.match.inPlayingXI);
-
   const fixture = fixturesById.get(selectedMatchId);
   const teamA = fixture?.teams?.[0];
   const teamB = fixture?.teams?.[1];
-
-  const groupByTeam = (entries: typeof playingXI) => {
-    const groups: Record<string, typeof entries> = {};
-    entries.forEach(entry => {
-      const team = entry.player?.country ?? "Other";
-      if (!groups[team]) groups[team] = [];
-      groups[team].push(entry);
-    });
-    return groups;
-  };
-
-  const groupedXI = groupByTeam(playingXI);
-
-  const playerRoleMap = useMemo(
-    () => new Map(players.map(player => [player.id, player.role] as const)),
-    []
-  );
-
-  const computeMatchPoints = (entry: (typeof matchPlayers)[number]) => {
-    const role = (playerRoleMap.get(entry.player!.id) ??
-      entry.player!.role) as PlayerRole;
-    const basePoints = scoreMatchBase(entry.match, role);
-    const motmBonus = entry.match.manOfTheMatch ? 20 : 0;
-    return { basePoints, motmBonus, total: basePoints + motmBonus };
-  };
 
   const handleLoadLocks = async () => {
     if (lockedLoaded) return;
@@ -113,32 +52,6 @@ export default function AdminOpsPage() {
   const matchLocks = lockedHistory
     .filter(row => row.match_id === selectedMatchId)
     .sort((a, b) => (a.locked_at || "").localeCompare(b.locked_at || ""));
-
-  const filteredPlayers = players.filter(player =>
-    player.name.toLowerCase().includes(playerSearch.toLowerCase())
-  );
-
-  const selectedPlayer = filteredPlayers[0];
-
-  const playerMatches = useMemo(() => {
-    if (!selectedPlayer) return [];
-    const entry = stats.find(s => s.playerId === selectedPlayer.id);
-    if (!entry) return [];
-    return entry.matches
-      .map(match => {
-        const role = (playerRoleMap.get(selectedPlayer.id) ??
-          selectedPlayer.role) as PlayerRole;
-        const basePoints = scoreMatchBase(match, role);
-        const motmBonus = match.manOfTheMatch ? 20 : 0;
-        return {
-          matchId: match.matchId,
-          basePoints,
-          motmBonus,
-          total: basePoints + motmBonus,
-        };
-      })
-      .sort((a, b) => a.matchId - b.matchId);
-  }, [selectedPlayer, stats, playerRoleMap]);
 
   if (!ready) {
     return (
@@ -178,7 +91,7 @@ export default function AdminOpsPage() {
           </div>
           <div className="flex gap-4 text-sm">
             <Link href="/admin/match-stats" className="text-indigo-300 hover:underline">
-              Match Stats
+              Player Points
             </Link>
             <Link href="/" className="text-indigo-300 hover:underline">
               Home
@@ -235,52 +148,6 @@ export default function AdminOpsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div className="text-sm text-slate-300 mb-2">
-                Playing XI - Match #{selectedMatchId}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[teamA, teamB].map(team => (
-                  <div key={team ?? "team"} className="space-y-2">
-                    <div className="text-xs uppercase tracking-widest text-slate-400">
-                      {team ?? "Other"}
-                    </div>
-                    {(groupedXI[team ?? ""] || [])
-                      .map(entry => {
-                        const points = computeMatchPoints(entry);
-                        return (
-                          <div
-                            key={entry.player!.id}
-                            className="flex items-center justify-between rounded-lg border border-white/10 px-3 py-2 text-sm"
-                          >
-                            <div>
-                              <div className="font-medium">
-                                {entry.player!.name}
-                              </div>
-                              <div className="text-xs text-slate-400">
-                                {entry.player!.role} · {entry.player!.credit} cr
-                              </div>
-                            </div>
-                            <div className="text-right text-xs text-slate-300">
-                              <div>Base {points.basePoints}</div>
-                              <div>MOTM {points.motmBonus}</div>
-                              <div className="text-white font-semibold">
-                                {points.total}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    {(groupedXI[team ?? ""] || []).length === 0 && (
-                      <div className="text-xs text-slate-500">
-                        No XI entries yet.
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-slate-300">
@@ -321,58 +188,13 @@ export default function AdminOpsPage() {
 
           <div className="space-y-4">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
-              <div className="text-sm text-slate-300">
-                Player Points Lookup
+              <div className="text-sm text-slate-300">Match Summary</div>
+              <div className="text-xs text-slate-400">
+                {teamA} vs {teamB}
               </div>
-              <input
-                value={playerSearch}
-                onChange={event => setPlayerSearch(event.target.value)}
-                placeholder="Search player"
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500"
-              />
-              {selectedPlayer ? (
-                <div className="space-y-2">
-                  <div className="text-sm font-semibold">
-                    {selectedPlayer.name}
-                  </div>
-                  {playerMatches.length === 0 ? (
-                    <div className="text-xs text-slate-500">
-                      No match stats yet.
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {playerMatches.map(match => {
-                        const fixture = fixturesById.get(match.matchId);
-                        return (
-                          <div
-                            key={match.matchId}
-                            className="flex items-center justify-between rounded-lg border border-white/10 px-3 py-2 text-xs"
-                          >
-                            <div>
-                              <div className="text-slate-200">
-                                M{match.matchId}{" "}
-                                {fixture
-                                  ? `${teamShort(fixture.teams[0])} vs ${teamShort(
-                                      fixture.teams[1]
-                                    )}`
-                                  : ""}
-                              </div>
-                              <div className="text-slate-500">
-                                Base {match.basePoints} · MOTM {match.motmBonus}
-                              </div>
-                            </div>
-                            <div className="text-white font-semibold">
-                              {match.total}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-xs text-slate-500">No player found.</div>
-              )}
+              <div className="text-xs text-slate-500">
+                Use the Player Points page to paste scores and update users.
+              </div>
             </div>
           </div>
         </div>

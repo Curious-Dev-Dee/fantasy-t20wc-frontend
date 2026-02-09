@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { fixtures, type TournamentPhase } from "@/data/fixtures";
 import { teamShort } from "@/utils/teamCodes";
@@ -175,12 +174,6 @@ export default function FixturesPage() {
                     <div className="text-xs text-slate-500 mt-1">
                       UTC: {match.startTimeUTC}
                     </div>
-                    <Link
-                      href={`/match-center/${match.matchId}`}
-                      className="mt-2 inline-block text-xs text-indigo-300 hover:underline"
-                    >
-                      Open Match Center
-                    </Link>
                   </div>
                 </div>
               </div>

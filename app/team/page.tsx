@@ -2,18 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTeam } from "@/hooks/useTeam";
 import { useTournament } from "@/hooks/useTournament";
 import { useAuth } from "@/hooks/useAuth";
 import { scopedKey } from "@/utils/storage";
-import { players, type Player } from "@/data/players";
-import type { MatchStats } from "@/data/matchStats";
-import {
-  scorePlayerBreakdown,
-  type PlayerRole,
-} from "@/utils/scoring";
-import { useMatchStats } from "@/hooks/useMatchStats";
+import type { Player } from "@/data/players";
+import { fetchPlayerMatchPoints } from "@/utils/pointsPersistence";
+import { isSupabaseConfigured } from "@/utils/supabaseClient";
 import { useProfile } from "@/hooks/useProfile";
 
 export default function TeamPage() {
@@ -21,21 +17,31 @@ export default function TeamPage() {
   const tournament = useTournament();
   const { user } = useAuth();
   const { profile } = useProfile();
-  const { stats } = useMatchStats();
+  const [playerPoints, setPlayerPoints] = useState(new Map<string, number>());
 
   const [showLockTip, setShowLockTip] = useState(false);
   const [showAutoLockToast, setShowAutoLockToast] = useState(false);
   const lockTipRef = useRef<HTMLButtonElement | null>(null);
   const fieldWrapRef = useRef<HTMLDivElement | null>(null);
 
-  const playerRoleMap = useMemo(
-    () => new Map(players.map(player => [player.id, player.role] as const)),
-    []
-  );
-  const statsMap = useMemo(
-    () => new Map(stats.map(stat => [stat.playerId, stat.matches])),
-    [stats]
-  );
+  useEffect(() => {
+    let cancelled = false;
+    const loadPoints = async () => {
+      if (!isSupabaseConfigured) return;
+      const rows = await fetchPlayerMatchPoints();
+      if (cancelled) return;
+      const map = new Map<string, number>();
+      rows.forEach(row => {
+        const prev = map.get(row.player_id) ?? 0;
+        map.set(row.player_id, prev + Number(row.points ?? 0));
+      });
+      setPlayerPoints(map);
+    };
+    loadPoints();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!showLockTip) return;
@@ -124,29 +130,25 @@ export default function TeamPage() {
                       title="Wicket Keepers"
                       players={team.selectedPlayers.filter(p => p?.role === "WK")}
                       team={team}
-                      statsMap={statsMap}
-                      playerRoleMap={playerRoleMap}
+                      playerPoints={playerPoints}
                     />
                     <GroundRow
                       title="Batters"
                       players={team.selectedPlayers.filter(p => p?.role === "BAT")}
                       team={team}
-                      statsMap={statsMap}
-                      playerRoleMap={playerRoleMap}
+                      playerPoints={playerPoints}
                     />
                     <GroundRow
                       title="All-Rounders"
                       players={team.selectedPlayers.filter(p => p?.role === "AR")}
                       team={team}
-                      statsMap={statsMap}
-                      playerRoleMap={playerRoleMap}
+                      playerPoints={playerPoints}
                     />
                     <GroundRow
                       title="Bowlers"
                       players={team.selectedPlayers.filter(p => p?.role === "BOWL")}
                       team={team}
-                      statsMap={statsMap}
-                      playerRoleMap={playerRoleMap}
+                      playerPoints={playerPoints}
                     />
                   </div>
               </div>
@@ -168,14 +170,12 @@ function GroundRow({
   title,
   players,
   team,
-  statsMap,
-  playerRoleMap,
+  playerPoints,
 }: {
   title: string;
   players: Array<Player | undefined>;
   team: ReturnType<typeof useTeam>;
-  statsMap: Map<string, MatchStats[]>;
-  playerRoleMap: Map<string, PlayerRole>;
+  playerPoints: Map<string, number>;
 }) {
   const validPlayers = players.filter(Boolean);
   if (validPlayers.length === 0) return null;
@@ -189,19 +189,11 @@ function GroundRow({
       <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
         {validPlayers.map(player => {
           const id = player!.id;
-          const role: PlayerRole = playerRoleMap.get(id) || player!.role;
-          const matches = statsMap.get(id) || [];
           const isCaptain = team.workingTeam.captainId === id;
           const isVice = team.workingTeam.viceCaptainId === id;
-          const breakdown = scorePlayerBreakdown(
-            matches,
-            role,
-            isCaptain,
-            isVice
-          );
           const multiplier = isCaptain ? 2 : isVice ? 1.5 : 1;
-          const total =
-            Math.round(breakdown.basePoints * multiplier) + breakdown.motmBonus;
+          const basePoints = playerPoints.get(id) ?? 0;
+          const total = basePoints * multiplier;
           return (
             <div
               key={id}

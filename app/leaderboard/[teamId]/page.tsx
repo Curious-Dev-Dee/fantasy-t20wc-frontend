@@ -212,29 +212,21 @@ export default function LeaderboardTeamPage() {
                 title="Wicket Keeper"
                 players={roster.filter(p => p?.role === "WK")}
                 team={team}
-                statsMap={statsMap}
-                playerRoleMap={playerRoleMap}
               />
               <GroundRow
                 title="Batters"
                 players={roster.filter(p => p?.role === "BAT")}
                 team={team}
-                statsMap={statsMap}
-                playerRoleMap={playerRoleMap}
               />
               <GroundRow
                 title="All Rounders"
                 players={roster.filter(p => p?.role === "AR")}
                 team={team}
-                statsMap={statsMap}
-                playerRoleMap={playerRoleMap}
               />
               <GroundRow
                 title="Bowlers"
                 players={roster.filter(p => p?.role === "BOWL")}
                 team={team}
-                statsMap={statsMap}
-                playerRoleMap={playerRoleMap}
               />
             </div>
           )}

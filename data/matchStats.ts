@@ -5,6 +5,7 @@ export type BattingStats = {
   sixes: number;
   dismissed: boolean;
   duck: boolean;
+  overridePoints?: number;
 };
 
 export type BowlingStats = {

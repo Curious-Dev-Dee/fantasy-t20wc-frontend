@@ -6,18 +6,18 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTournament } from "@/hooks/useTournament";
 import { useTeam } from "@/hooks/useTeam";
-import { useMatchStats } from "@/hooks/useMatchStats";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
-import { players } from "@/data/players";
 import { fixtures } from "@/data/fixtures";
-import { scoreLockedTeams, scoreTeam } from "@/utils/scoring";
 import { teamShort } from "@/utils/teamCodes";
-import { fetchLeaderboardTeams } from "@/utils/leaderboardPersistence";
-import { fetchAllLockHistory } from "@/utils/lockHistoryPersistence";
 import { fetchLeagueMembers, fetchUserLeagues } from "@/utils/leaguePersistence";
-import { supabase, isSupabaseConfigured } from "@/utils/supabaseClient";
+import { isSupabaseConfigured } from "@/utils/supabaseClient";
 import { getJSON, setJSON } from "@/utils/storage";
+import { isAdminEmail } from "@/utils/admin";
+import {
+  fetchLeaderboardTotals,
+  fetchUsersTotalPoints,
+} from "@/utils/pointsPersistence";
 
 type LeagueSummary = {
   id: string;
@@ -26,16 +26,6 @@ type LeagueSummary = {
   myScore: number | null;
 };
 
-type WorkingTeamLite = {
-  players?: string[];
-  captainId?: string | null;
-  viceCaptainId?: string | null;
-};
-
-type UserTeamLite = {
-  user_id: string;
-  working_team: WorkingTeamLite | null;
-};
 
 type HomeCache = {
   globalTop: Array<{ id: string; name: string; score: number }>;
@@ -54,7 +44,6 @@ export default function HomePage() {
   const { profile, loading: profileLoading } = useProfile();
   const tournament = useTournament();
   const team = useTeam();
-  const { stats } = useMatchStats();
 
   const cachedHome = useMemo(() => {
     return getJSON<HomeCache | null>(HOME_CACHE_KEY, null);
@@ -74,15 +63,6 @@ export default function HomePage() {
   );
   const [loadingLeagues, setLoadingLeagues] = useState(false);
 
-  const playerRoleMap = useMemo(
-    () => new Map(players.map(player => [player.id, player.role])),
-    []
-  );
-
-  const statsMap = useMemo(() => {
-    return new Map(stats.map(stat => [stat.playerId, stat.matches]));
-  }, [stats]);
-
   useEffect(() => {
     if (!ready) return;
     if (!user) {
@@ -92,28 +72,12 @@ export default function HomePage() {
   }, [user, ready, router]);
 
   const totalScore = useMemo(() => {
-    if (team.lockedTeams.length > 0) {
-      return scoreLockedTeams({
-        lockedTeams: team.lockedTeams,
-        playerRoleMap,
-        statsMap,
-      });
-    }
-    return scoreTeam({
-      playerIds: team.workingTeam.players,
-      captainId: team.workingTeam.captainId,
-      viceCaptainId: team.workingTeam.viceCaptainId,
-      playerRoleMap,
-      statsMap,
-    });
-  }, [
-    team.lockedTeams,
-    team.workingTeam.players,
-    team.workingTeam.captainId,
-    team.workingTeam.viceCaptainId,
-    playerRoleMap,
-    statsMap,
-  ]);
+    return myGlobalScore ?? 0;
+  }, [myGlobalScore]);
+
+  const isAdmin = useMemo(() => {
+    return isAdminEmail(user?.email);
+  }, [user?.email]);
 
   const nextMatchLabel = tournament.nextMatch
     ? `#${tournament.nextMatch.matchId} ${teamShort(
@@ -154,7 +118,7 @@ export default function HomePage() {
     : null;
 
   useEffect(() => {
-    if (!user || !isSupabaseConfigured || !supabase) return;
+    if (!user || !isSupabaseConfigured) return;
     let cancelled = false;
     const loadData = async () => {
       const cached = getJSON<HomeCache | null>(HOME_CACHE_KEY, null);
@@ -165,47 +129,16 @@ export default function HomePage() {
         setLoadingLeagues(true);
       }
 
-      const [rows, locked, leagues] = await Promise.all([
-        fetchLeaderboardTeams(),
-        fetchAllLockHistory(),
+      const [rows, leagues] = await Promise.all([
+        fetchLeaderboardTotals(),
         fetchUserLeagues(user.id),
       ]);
 
-      const lockedByUser = new Map<string, typeof locked>();
-      locked.forEach(row => {
-        const list = lockedByUser.get(row.user_id) || [];
-        list.push(row);
-        lockedByUser.set(row.user_id, list);
-      });
-
-      const scoredGlobal = rows.map(row => {
-        const lockedRows = lockedByUser.get(row.user_id) || [];
-        const lockedTeams = lockedRows.map(entry => ({
-          matchId: entry.match_id,
-          players: entry.players,
-          captainId: entry.captain_id,
-          viceCaptainId: entry.vice_captain_id,
-        }));
-        const score =
-          lockedTeams.length > 0
-            ? scoreLockedTeams({
-                lockedTeams,
-                playerRoleMap,
-                statsMap,
-              })
-            : scoreTeam({
-                playerIds: row.working_team?.players || [],
-                captainId: row.working_team?.captainId || null,
-                viceCaptainId: row.working_team?.viceCaptainId || null,
-                playerRoleMap,
-                statsMap,
-              });
-        return {
-          id: row.user_id,
-          name: row.team_name || "Team",
-          score,
-        };
-      });
+      const scoredGlobal = rows.map(row => ({
+        id: row.user_id,
+        name: row.team_name || "Team",
+        score: Number(row.total_points ?? 0),
+      }));
       const sortedGlobal = [...scoredGlobal].sort((a, b) => b.score - a.score);
       const nextGlobalTop = sortedGlobal.slice(0, 2);
       const myIndex = sortedGlobal.findIndex(entry => entry.id === user.id);
@@ -224,44 +157,14 @@ export default function HomePage() {
             )
           )
         );
-        let memberTeams: UserTeamLite[] = [];
-        if (allMemberIds.length > 0 && supabase) {
-          const { data } = await supabase
-            .from("user_teams")
-            .select("user_id, working_team")
-            .in("user_id", allMemberIds);
-          memberTeams = (data ?? []) as UserTeamLite[];
-        }
+        const totalsMap = await fetchUsersTotalPoints(allMemberIds);
 
         leagues.forEach((league, index) => {
           const members = membersList[index];
-          const scored = members.map(member => {
-            const teamRow = memberTeams.find(
-              teamEntry => teamEntry.user_id === member.user_id
-            );
-            const lockedRows = lockedByUser.get(member.user_id) || [];
-            const lockedTeams = lockedRows.map(entry => ({
-              matchId: entry.match_id,
-              players: entry.players,
-              captainId: entry.captain_id,
-              viceCaptainId: entry.vice_captain_id,
-            }));
-            const score =
-              lockedTeams.length > 0
-                ? scoreLockedTeams({
-                    lockedTeams,
-                    playerRoleMap,
-                    statsMap,
-                  })
-                : scoreTeam({
-                    playerIds: teamRow?.working_team?.players || [],
-                    captainId: teamRow?.working_team?.captainId || null,
-                    viceCaptainId: teamRow?.working_team?.viceCaptainId || null,
-                    playerRoleMap,
-                    statsMap,
-                  });
-            return { userId: member.user_id, score };
-          });
+          const scored = members.map(member => ({
+            userId: member.user_id,
+            score: totalsMap.get(member.user_id) ?? 0,
+          }));
           const sorted = [...scored].sort((a, b) => b.score - a.score);
           const myLeagueIndex = sorted.findIndex(
             entry => entry.userId === user.id
@@ -295,7 +198,7 @@ export default function HomePage() {
     return () => {
       cancelled = true;
     };
-  }, [user, statsMap, playerRoleMap]);
+  }, [user]);
 
   if (!user || profileLoading) {
     return (
@@ -377,6 +280,14 @@ export default function HomePage() {
             >
               Edit Team
             </Link>
+            {isAdmin && (
+              <Link
+                href="/admin/match-stats"
+                className="px-4 py-2 rounded-xl bg-amber-500/20 text-amber-200 hover:bg-amber-500/30 transition"
+              >
+                Admin Points
+              </Link>
+            )}
             <Link
               href="/fixtures"
               className="ml-auto text-xs text-slate-400 hover:text-slate-200 transition"

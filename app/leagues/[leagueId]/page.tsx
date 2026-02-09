@@ -6,11 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { leagues as baseLeagues, League } from "@/data/leagues";
 import { useTournament } from "@/hooks/useTournament";
 import { teamShort } from "@/utils/teamCodes";
-import { useMatchStats } from "@/hooks/useMatchStats";
-import { scoreLockedTeams, scoreTeam } from "@/utils/scoring";
-import { players } from "@/data/players";
 import { useTeam } from "@/hooks/useTeam";
-import { leaderboardTeams as baseLeaderboardTeams, LeaderboardTeam } from "@/data/leaderboard";
 import { useProfile } from "@/hooks/useProfile";
 import { getJSON } from "@/utils/storage";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,26 +21,7 @@ import {
   type LockedHistoryRow,
 } from "@/utils/lockHistoryPersistence";
 import { supabase } from "@/utils/supabaseClient";
-import type { UserTeamRow } from "@/utils/teamPersistence";
-
-type WorkingTeamLite = {
-  players?: string[];
-  captainId?: string | null;
-  viceCaptainId?: string | null;
-};
-
-const asWorkingTeam = (value: unknown): WorkingTeamLite | null => {
-  if (!value || typeof value !== "object") return null;
-  const raw = value as Record<string, unknown>;
-  const players = Array.isArray(raw.players)
-    ? raw.players.filter((entry): entry is string => typeof entry === "string")
-    : [];
-  return {
-    players,
-    captainId: typeof raw.captainId === "string" ? raw.captainId : null,
-    viceCaptainId: typeof raw.viceCaptainId === "string" ? raw.viceCaptainId : null,
-  };
-};
+import { fetchUsersTotalPoints } from "@/utils/pointsPersistence";
 
 export default function LeagueDetailPage() {
   const params = useParams<{ leagueId: string }>();
@@ -53,17 +30,14 @@ export default function LeagueDetailPage() {
   const [copied, setCopied] = useState(false);
   const [leagues, setLeagues] = useState<League[]>(baseLeagues);
   const [loaded, setLoaded] = useState(false);
-  const { stats } = useMatchStats();
   const myTeam = useTeam();
   const { profile } = useProfile();
   const { user, ready, isConfigured } = useAuth();
-  const [leaderboardTeams, setLeaderboardTeams] =
-    useState<LeaderboardTeam[]>(baseLeaderboardTeams);
   const [remoteLeague, setRemoteLeague] = useState<LeagueRow | null>(null);
   const [remoteMembers, setRemoteMembers] = useState<LeagueMemberRow[]>([]);
-  const [memberTeams, setMemberTeams] = useState<UserTeamRow[]>([]);
   const [memberNames, setMemberNames] = useState<Record<string, string>>({});
   const [lockedHistory, setLockedHistory] = useState<LockedHistoryRow[]>([]);
+  const [memberTotals, setMemberTotals] = useState(new Map<string, number>());
 
   useEffect(() => {
     let cancelled = false;
@@ -83,17 +57,11 @@ export default function LeagueDetailPage() {
 
         if (leagueRow && supabase && members.length > 0) {
           const ids = members.map(member => member.user_id);
-          const [{ data }, { data: profiles }] = await Promise.all([
-            supabase.from("user_teams").select("*").in("user_id", ids),
-            supabase
-              .from("user_profiles")
-              .select("user_id, team_name")
-              .in("user_id", ids),
-          ]);
+          const { data: profiles } = await supabase
+            .from("user_profiles")
+            .select("user_id, team_name")
+            .in("user_id", ids);
           if (cancelled) return;
-          if (data) {
-            setMemberTeams(data as UserTeamRow[]);
-          }
           if (profiles) {
             const map: Record<string, string> = {};
             profiles.forEach(profileRow => {
@@ -103,6 +71,8 @@ export default function LeagueDetailPage() {
             });
             setMemberNames(map);
           }
+          const totalsMap = await fetchUsersTotalPoints(ids);
+          setMemberTotals(totalsMap);
         }
         if (cancelled) return;
         setLoaded(true);
@@ -131,27 +101,6 @@ export default function LeagueDetailPage() {
     };
   }, [ready, user, isConfigured, params.leagueId]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadLeaderboard = async () => {
-      const saved = getJSON<LeaderboardTeam[] | null>(
-        "fantasy_leaderboard",
-        null
-      );
-      await Promise.resolve();
-      if (cancelled) return;
-      if (saved && Array.isArray(saved) && saved.length > 0) {
-        setLeaderboardTeams(saved);
-      }
-    };
-
-    void loadLeaderboard();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const league = useMemo(() => {
     if (user && isConfigured) {
@@ -172,34 +121,12 @@ export default function LeagueDetailPage() {
   const remoteOwnerId = remoteLeague?.owner_id ?? null;
 
   const myTeamScore = useMemo(() => {
-    const playerRoleMap = new Map(players.map(player => [player.id, player.role]));
-    const statsMap = new Map(stats.map(stat => [stat.playerId, stat.matches]));
-    return myTeam.lockedTeams.length > 0
-      ? scoreLockedTeams({
-          lockedTeams: myTeam.lockedTeams,
-          playerRoleMap,
-          statsMap,
-        })
-      : scoreTeam({
-          playerIds: myTeam.workingTeam.players,
-          captainId: myTeam.workingTeam.captainId,
-          viceCaptainId: myTeam.workingTeam.viceCaptainId,
-          playerRoleMap,
-          statsMap,
-        });
-  }, [
-    stats,
-    myTeam.workingTeam.players,
-    myTeam.workingTeam.captainId,
-    myTeam.workingTeam.viceCaptainId,
-    myTeam.lockedTeams,
-  ]);
+    if (!user) return 0;
+    return memberTotals.get(user.id) ?? 0;
+  }, [memberTotals, user]);
 
   const computedMembers = useMemo(() => {
     if (!league) return [];
-    const playerRoleMap = new Map(players.map(player => [player.id, player.role]));
-    const statsMap = new Map(stats.map(stat => [stat.playerId, stat.matches]));
-    const teamScoreMap = new Map<string, number>();
     const lockedByUser = new Map<string, LockedHistoryRow[]>();
     const lockedLatest = new Map<string, number>();
     lockedHistory.forEach(row => {
@@ -212,35 +139,7 @@ export default function LeagueDetailPage() {
 
     if (user && isConfigured) {
       const memberScores = remoteMembers.map(member => {
-        const teamRow = memberTeams.find(team => team.user_id === member.user_id);
-        const working = asWorkingTeam(teamRow?.working_team);
-        const playerIds = Array.isArray(working?.players) ? working.players : [];
-        const captainId = working?.captainId || null;
-        const viceCaptainId = working?.viceCaptainId || null;
-        const lockedRows = lockedByUser.get(member.user_id);
-        const lockedTeams =
-          lockedRows?.map(row => ({
-            matchId: row.match_id,
-            players: row.players,
-            captainId: row.captain_id,
-            viceCaptainId: row.vice_captain_id,
-          })) || [];
-        const score =
-          member.user_id === user.id
-            ? myTeamScore
-            : lockedTeams.length > 0
-            ? scoreLockedTeams({
-                lockedTeams,
-                playerRoleMap,
-                statsMap,
-              })
-            : scoreTeam({
-                playerIds,
-                captainId,
-                viceCaptainId,
-                playerRoleMap,
-                statsMap,
-              });
+        const score = memberTotals.get(member.user_id) ?? 0;
         const name =
           member.user_id === user.id
             ? (profile.team_name || "Team")
@@ -264,22 +163,11 @@ export default function LeagueDetailPage() {
       }));
     }
 
-    leaderboardTeams.forEach(team => {
-      const score = scoreTeam({
-        playerIds: team.players,
-        captainId: team.captainId,
-        viceCaptainId: team.viceCaptainId,
-        playerRoleMap,
-        statsMap,
-      });
-      teamScoreMap.set(team.id, score);
-    });
-
     const membersWithScore = league.members.map(member => {
       const score =
         member.teamId === "my-team"
           ? myTeamScore
-          : teamScoreMap.get(member.teamId) ?? member.score;
+          : member.score;
       const name = member.teamId === "my-team" ? (profile.team_name || "Team") : member.teamName;
       return {
         ...member,
@@ -299,13 +187,11 @@ export default function LeagueDetailPage() {
     }));
   }, [
     league,
-    leaderboardTeams,
-    stats,
     myTeamScore,
     profile.team_name,
     memberNames,
+    memberTotals,
     remoteMembers,
-    memberTeams,
     user,
     isConfigured,
     lockedHistory,

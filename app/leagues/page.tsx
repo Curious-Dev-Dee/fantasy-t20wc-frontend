@@ -7,9 +7,6 @@ import { leagues as baseLeagues, League } from "@/data/leagues";
 import { useTournament } from "@/hooks/useTournament";
 import { teamShort } from "@/utils/teamCodes";
 import { useTeam } from "@/hooks/useTeam";
-import { useMatchStats } from "@/hooks/useMatchStats";
-import { scoreTeam } from "@/utils/scoring";
-import { players } from "@/data/players";
 import { useProfile } from "@/hooks/useProfile";
 import { getJSON, setJSON } from "@/utils/storage";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,7 +29,6 @@ export default function LeaguesPage() {
   const tournament = useTournament();
   const team = useTeam();
   const { profile } = useProfile();
-  const { stats } = useMatchStats();
   const { user, ready, isConfigured } = useAuth();
   const [leagueName, setLeagueName] = useState("");
   const [joinCode, setJoinCode] = useState("");
@@ -132,15 +128,7 @@ export default function LeaguesPage() {
       return league;
     }
     const nextRank = league.members.length + 1;
-    const playerRoleMap = new Map(players.map(player => [player.id, player.role]));
-    const statsMap = new Map(stats.map(stat => [stat.playerId, stat.matches]));
-    const score = scoreTeam({
-      playerIds: team.workingTeam.players,
-      captainId: team.workingTeam.captainId,
-      viceCaptainId: team.workingTeam.viceCaptainId,
-      playerRoleMap,
-      statsMap,
-    });
+    const score = 0;
     return {
       ...league,
         members: [

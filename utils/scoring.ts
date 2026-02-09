@@ -53,6 +53,14 @@ const economyBonus = (overs: number, runsConceded: number) => {
 };
 
 export const scoreMatchBase = (stats: MatchStats, role: PlayerRole) => {
+  const overridePoints =
+    typeof stats.batting?.overridePoints === "number"
+      ? stats.batting.overridePoints
+      : null;
+  if (overridePoints !== null) {
+    return overridePoints;
+  }
+
   let points = 0;
 
   if (stats.inPlayingXI) points += 4;

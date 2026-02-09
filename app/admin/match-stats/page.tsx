@@ -45,6 +45,8 @@ export default function MatchStatsAdminPage() {
   const [form, setForm] = useState<MatchStats>(emptyStats);
   const [message, setMessage] = useState<string | null>(null);
   const [csvMessage, setCsvMessage] = useState<string | null>(null);
+  const [pointsPaste, setPointsPaste] = useState("");
+  const [pointsMessage, setPointsMessage] = useState<string | null>(null);
 
   const fixtureOptions = useMemo(() => fixtures.slice(0, 55), []);
 
@@ -52,6 +54,21 @@ export default function MatchStatsAdminPage() {
     () => new Map(players.map(player => [player.id, player])),
     []
   );
+
+  const playerNameMap = useMemo(() => {
+    const normalize = (value: string) =>
+      value
+        .toLowerCase()
+        .replace(/\(.*?\)/g, "")
+        .replace(/[^a-z\s]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    const map = new Map<string, string>();
+    players.forEach(player => {
+      map.set(normalize(player.name), player.id);
+    });
+    return { map, normalize };
+  }, []);
 
   const fixtureMap = useMemo(
     () => new Map(fixtures.map(fixture => [fixture.matchId, fixture])),
@@ -122,16 +139,19 @@ export default function MatchStatsAdminPage() {
     }
     const errors: string[] = [];
     if (nextForm.batting) {
+      const overridePoints = nextForm.batting.overridePoints;
       if (nextForm.batting.balls === 0 && nextForm.batting.runs > 0) {
         errors.push("Batting balls must be > 0 when runs > 0.");
       }
-      if (
-        nextForm.batting.runs < 0 ||
-        nextForm.batting.balls < 0 ||
-        nextForm.batting.fours < 0 ||
-        nextForm.batting.sixes < 0
-      ) {
-        errors.push("Batting values must be non-negative.");
+      if (typeof overridePoints !== "number") {
+        if (
+          nextForm.batting.runs < 0 ||
+          nextForm.batting.balls < 0 ||
+          nextForm.batting.fours < 0 ||
+          nextForm.batting.sixes < 0
+        ) {
+          errors.push("Batting values must be non-negative.");
+        }
       }
     }
     if (nextForm.bowling) {
@@ -185,6 +205,98 @@ export default function MatchStatsAdminPage() {
     setMessage("Match stats saved.");
   };
 
+  const parsePointsPaste = (text: string) => {
+    const lines = text.split(/\r?\n/).map(line => line.trim());
+    const entries: { playerId: string; points: number }[] = [];
+    const { map, normalize } = playerNameMap;
+    const playerNames = Array.from(map.keys()).sort(
+      (a, b) => b.length - a.length
+    );
+    lines.forEach(line => {
+      if (!line) return;
+      if (/fantasy points/i.test(line)) return;
+      if (/^player\b/i.test(line)) return;
+      const totalMatch = line.match(/(-?\d+)\s*$/);
+      if (!totalMatch) return;
+      const total = Number(totalMatch[1]);
+      const normalizedLine = normalize(line);
+      let matchedId: string | null = null;
+      for (const name of playerNames) {
+        if (normalizedLine.startsWith(name)) {
+          matchedId = map.get(name) || null;
+          break;
+        }
+      }
+      if (!matchedId) {
+        for (const name of playerNames) {
+          if (normalizedLine.includes(name)) {
+            matchedId = map.get(name) || null;
+            break;
+          }
+        }
+      }
+      if (!matchedId) return;
+      entries.push({ playerId: matchedId, points: total });
+    });
+    return entries;
+  };
+
+  const handlePastePoints = () => {
+    setPointsMessage(null);
+    if (!pointsPaste.trim()) {
+      setPointsMessage("Paste fantasy points first.");
+      return;
+    }
+    if (!form.matchId) {
+      setPointsMessage("Select a match.");
+      return;
+    }
+    const entries = parsePointsPaste(pointsPaste);
+    if (entries.length === 0) {
+      setPointsMessage("No valid player totals found.");
+      return;
+    }
+    const next: PlayerMatchStats[] = [...stats];
+    const nextMap = new Map(next.map(entry => [entry.playerId, entry]));
+    entries.forEach(entry => {
+      const existing =
+        nextMap.get(entry.playerId) || ({ playerId: entry.playerId, matches: [] } as PlayerMatchStats);
+      const matches = existing.matches.filter(m => m.matchId !== form.matchId);
+      matches.push({
+        matchId: form.matchId,
+        inPlayingXI: false,
+        impactPlayer: false,
+        batting: {
+          runs: 0,
+          balls: 0,
+          fours: 0,
+          sixes: 0,
+          dismissed: false,
+          duck: false,
+          overridePoints: entry.points,
+        },
+        bowling: {
+          overs: 0,
+          maidens: 0,
+          wickets: 0,
+          lbwBowled: 0,
+          dotBalls: 0,
+          runsConceded: 0,
+        },
+        fielding: {
+          catches: 0,
+          stumpings: 0,
+          runOutDirect: 0,
+          runOutIndirect: 0,
+        },
+      });
+      nextMap.set(entry.playerId, { ...existing, matches });
+    });
+    const nextStats = Array.from(nextMap.values());
+    setStats(nextStats);
+    setPointsMessage(`Imported ${entries.length} player totals.`);
+  };
+
   const toCsv = () => {
     const header = [
       "playerId",
@@ -197,6 +309,7 @@ export default function MatchStatsAdminPage() {
       "battingSixes",
       "battingDismissed",
       "battingDuck",
+      "battingOverridePoints",
       "bowlingOvers",
       "bowlingMaidens",
       "bowlingWickets",
@@ -222,6 +335,7 @@ export default function MatchStatsAdminPage() {
         match.batting?.sixes ?? 0,
         match.batting?.dismissed ?? false,
         match.batting?.duck ?? false,
+        match.batting?.overridePoints ?? "",
         match.bowling?.overs ?? 0,
         match.bowling?.maidens ?? 0,
         match.bowling?.wickets ?? 0,
@@ -342,6 +456,9 @@ export default function MatchStatsAdminPage() {
           sixes: Number(get("battingSixes")),
           dismissed: get("battingDismissed") === "true",
           duck: get("battingDuck") === "true",
+          overridePoints: get("battingOverridePoints")
+            ? Number(get("battingOverridePoints"))
+            : undefined,
         },
         bowling: {
           overs: Number(get("bowlingOvers")),
@@ -363,11 +480,13 @@ export default function MatchStatsAdminPage() {
       const batting = match.batting!;
       const bowling = match.bowling!;
       const fielding = match.fielding!;
+      const hasOverride = typeof batting.overridePoints === "number";
       const invalid =
-        batting.runs < 0 ||
-        batting.balls < 0 ||
-        batting.fours < 0 ||
-        batting.sixes < 0 ||
+        (!hasOverride &&
+          (batting.runs < 0 ||
+            batting.balls < 0 ||
+            batting.fours < 0 ||
+            batting.sixes < 0)) ||
         bowling.overs < 0 ||
         bowling.overs > 4 ||
         bowling.maidens < 0 ||
@@ -513,10 +632,30 @@ export default function MatchStatsAdminPage() {
                 })
               }
             />
+            <label className="space-y-1 text-xs">
+              <span className="text-slate-400">Override Points (optional)</span>
+              <input
+                type="number"
+                value={form.batting?.overridePoints ?? ""}
+                onChange={event =>
+                  setForm({
+                    ...form,
+                    batting: {
+                      ...form.batting!,
+                      overridePoints:
+                        event.target.value === ""
+                          ? undefined
+                          : Number(event.target.value),
+                    },
+                  })
+                }
+                className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2"
+              />
+            </label>
             <label className="flex items-center gap-2 text-xs">
               <input
                 type="checkbox"
-              checked={form.batting?.dismissed ?? false}
+                checked={form.batting?.dismissed ?? false}
                 onChange={event =>
                   setForm({
                     ...form,
@@ -532,7 +671,7 @@ export default function MatchStatsAdminPage() {
             <label className="flex items-center gap-2 text-xs">
               <input
                 type="checkbox"
-              checked={form.batting?.duck ?? false}
+                checked={form.batting?.duck ?? false}
                 onChange={event =>
                   setForm({
                     ...form,
@@ -660,6 +799,32 @@ export default function MatchStatsAdminPage() {
             Save Stats
           </button>
           {message && <div className="text-xs text-slate-300">{message}</div>}
+
+          <div className="border-t border-white/10 pt-4 space-y-3">
+            <div className="text-xs uppercase tracking-wide text-slate-400">
+              Paste Fantasy Points
+            </div>
+            <p className="text-xs text-slate-400">
+              Paste player totals (one per line). We match player names and save
+              the total as an override for the selected match.
+            </p>
+            <textarea
+              value={pointsPaste}
+              onChange={event => setPointsPaste(event.target.value)}
+              rows={6}
+              className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-xs"
+              placeholder="Pathum Nissanka 30&#10;Kusal Mendis (wk) 88"
+            />
+            <button
+              onClick={handlePastePoints}
+              className="px-3 py-2 rounded bg-slate-800 text-xs hover:bg-slate-700"
+            >
+              Import Points
+            </button>
+            {pointsMessage && (
+              <div className="text-xs text-slate-300">{pointsMessage}</div>
+            )}
+          </div>
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-5 space-y-3">

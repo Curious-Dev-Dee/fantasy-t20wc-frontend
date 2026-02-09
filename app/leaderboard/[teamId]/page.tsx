@@ -5,18 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { leaderboardTeams as baseLeaderboardTeams, LeaderboardTeam } from "@/data/leaderboard";
 import { players, type Player } from "@/data/players";
-import type { MatchStats } from "@/data/matchStats";
-import { fixtures } from "@/data/fixtures";
 import { teamShort } from "@/utils/teamCodes";
 import { useTournament } from "@/hooks/useTournament";
-import {
-  scoreLockedTeams,
-  scorePlayerBreakdown,
-  scorePlayerMatches,
-  scoreTeam,
-  type PlayerRole,
-} from "@/utils/scoring";
-import { useMatchStats } from "@/hooks/useMatchStats";
 import { getJSON } from "@/utils/storage";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchLeaderboardTeams } from "@/utils/leaderboardPersistence";
@@ -25,6 +15,7 @@ import {
   fetchAllLockHistory,
   type LockedHistoryRow,
 } from "@/utils/lockHistoryPersistence";
+import { fetchLeaderboardTotals } from "@/utils/pointsPersistence";
 
 export default function LeaderboardTeamPage() {
   const params = useParams<{ teamId: string }>();
@@ -39,7 +30,6 @@ export default function LeaderboardTeamPage() {
     }
     return baseLeaderboardTeams;
   });
-  const [showAllMatches, setShowAllMatches] = useState(true);
   const { user, ready, isConfigured } = useAuth();
   const [remoteTeams, setRemoteTeams] = useState<LeaderboardTeam[] | null>(null);
   const myTeam = useTeam();
@@ -49,7 +39,13 @@ export default function LeaderboardTeamPage() {
     if (!ready) return;
     if (user && isConfigured) {
       const loadRemote = async () => {
-        const rows = await fetchLeaderboardTeams();
+        const [rows, totals] = await Promise.all([
+          fetchLeaderboardTeams(),
+          fetchLeaderboardTotals(),
+        ]);
+        const totalMap = new Map(
+          totals.map(row => [row.user_id, Number(row.total_points ?? 0)])
+        );
         const mapped: LeaderboardTeam[] = rows.map(row => ({
           id: row.user_id,
           name: row.team_name || "Team",
@@ -59,7 +55,7 @@ export default function LeaderboardTeamPage() {
           captainId: row.working_team?.captainId || "",
           viceCaptainId: row.working_team?.viceCaptainId || "",
           rank: 0,
-          score: 0,
+          score: totalMap.get(row.user_id) ?? 0,
           subsLeft: row.subs_used ?? 0,
         }));
         setRemoteTeams(mapped);
@@ -74,32 +70,19 @@ export default function LeaderboardTeamPage() {
   const loaded = ready && (!(user && isConfigured) || remoteTeams !== null);
 
   const teamSource = remoteTeams ?? leaderboardTeams;
+  const rankedTeams = useMemo(() => {
+    return [...teamSource]
+      .sort((a, b) => b.score - a.score)
+      .map((entry, index) => ({ ...entry, rank: index + 1 }));
+  }, [teamSource]);
   const teamId = typeof params.teamId === "string" ? params.teamId : "";
-  const team = teamSource.find(t => t.id === teamId);
+  const team = rankedTeams.find(t => t.id === teamId);
 
   const playerMap = useMemo(
     () => new Map(players.map(player => [player.id, player])),
     []
   );
 
-  const fixturesMap = useMemo(
-    () => new Map(fixtures.map(fixture => [fixture.matchId, fixture])),
-    []
-  );
-
-  const { stats } = useMatchStats();
-
-  const playerRoleMap = useMemo(
-    () =>
-      new Map<string, PlayerRole>(
-        players.map(player => [player.id, player.role] as [string, PlayerRole])
-      ),
-    []
-  );
-
-  const statsMap = useMemo(() => {
-    return new Map(stats.map(stat => [stat.playerId, stat.matches]));
-  }, [stats]);
 
   const lockedThrough = (() => {
     if (!team) return null;
@@ -136,33 +119,7 @@ export default function LeaderboardTeamPage() {
     .filter(Boolean);
 
   const isMe = Boolean(user && team.id === user.id);
-  const totalScore =
-    isMe && myTeam.lockedTeams.length > 0
-      ? scoreLockedTeams({
-          lockedTeams: myTeam.lockedTeams,
-          playerRoleMap,
-          statsMap,
-        })
-      : lockedHistory.some(row => row.user_id === team.id)
-      ? scoreLockedTeams({
-          lockedTeams: lockedHistory
-            .filter(row => row.user_id === team.id)
-            .map(row => ({
-              matchId: row.match_id,
-              players: Array.isArray(row.players) ? row.players : [],
-              captainId: row.captain_id,
-              viceCaptainId: row.vice_captain_id,
-            })),
-          playerRoleMap,
-          statsMap,
-        })
-      : scoreTeam({
-          playerIds: safePlayers,
-          captainId: team.captainId,
-          viceCaptainId: team.viceCaptainId,
-          playerRoleMap,
-          statsMap,
-        });
+  const totalScore = team.score ?? 0;
 
   const captain = team.captainId
     ? playerMap.get(team.captainId)
@@ -255,150 +212,28 @@ export default function LeaderboardTeamPage() {
                 title="Wicket Keeper"
                 players={roster.filter(p => p?.role === "WK")}
                 team={team}
-                statsMap={statsMap}
-                playerRoleMap={playerRoleMap}
               />
               <GroundRow
                 title="Batters"
                 players={roster.filter(p => p?.role === "BAT")}
                 team={team}
-                statsMap={statsMap}
-                playerRoleMap={playerRoleMap}
               />
               <GroundRow
                 title="All Rounders"
                 players={roster.filter(p => p?.role === "AR")}
                 team={team}
-                statsMap={statsMap}
-                playerRoleMap={playerRoleMap}
               />
               <GroundRow
                 title="Bowlers"
                 players={roster.filter(p => p?.role === "BOWL")}
                 team={team}
-                statsMap={statsMap}
-                playerRoleMap={playerRoleMap}
               />
             </div>
           )}
         </div>
 
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Player Points Breakdown</h2>
-            <button
-              onClick={() => setShowAllMatches(prev => !prev)}
-              className="text-xs text-indigo-300 hover:underline"
-            >
-              {showAllMatches ? "Show Latest Match" : "Show All Matches"}
-            </button>
-          </div>
-          {roster.map(player => {
-            const playerId = player!.id;
-            const role = (playerRoleMap.get(playerId) ?? "BAT") as PlayerRole;
-            const allMatches = statsMap.get(playerId) || [];
-            const matches = showAllMatches
-              ? allMatches
-              : allMatches.length > 0
-              ? [allMatches[allMatches.length - 1]]
-              : [];
-            const isCaptain = playerId === team.captainId;
-            const isVice = playerId === team.viceCaptainId;
-            const breakdown = scorePlayerBreakdown(
-              matches,
-              role,
-              isCaptain,
-              isVice
-            );
-            const matchBreakdown = scorePlayerMatches(
-              matches,
-              role,
-              isCaptain,
-              isVice
-            );
-            const multiplier = isCaptain ? 2 : isVice ? 1.5 : 1;
-            const total =
-              Math.round(breakdown.basePoints * multiplier) +
-              breakdown.motmBonus;
-            return (
-              <div
-                key={`score-${playerId}`}
-                className="border border-white/10 rounded-xl p-4 text-sm"
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-medium">{player!.name}</div>
-                    <div className="text-xs text-slate-400">
-                      {player!.role}
-                      {isCaptain && " - Captain"}
-                      {isVice && " - Vice"}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs text-slate-400">Total</div>
-                    <div className="font-semibold">{total}</div>
-                  </div>
-                </div>
-                <div className="text-xs text-slate-400 mt-2">
-                  Base: {breakdown.basePoints} - Multiplier: {multiplier}x -
-                  MOTM: {breakdown.motmBonus}
-                </div>
-                {matchBreakdown.length > 0 && (
-                  <div className="mt-3 text-xs">
-                    <div className="text-slate-400 mb-1">Per Match</div>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full text-left border border-white/10">
-                        <thead className="bg-white/5 text-slate-300">
-                          <tr>
-                            <th className="px-2 py-1">Match</th>
-                            <th className="px-2 py-1">Base</th>
-                            <th className="px-2 py-1">MOTM</th>
-                            <th className="px-2 py-1">Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {matchBreakdown.map(match => {
-                            const totalMatch =
-                              Math.round(match.basePoints * multiplier) +
-                              match.motmBonus;
-                            const fixture = fixturesMap.get(match.matchId);
-                            const label = fixture
-                              ? `M${fixture.matchId} ${teamShort(
-                                  fixture.teams[0]
-                                )} vs ${teamShort(fixture.teams[1])}`
-                              : `M${match.matchId}`;
-                            const startTime = fixture
-                              ? new Date(
-                                  fixture.startTimeUTC
-                                ).toLocaleString([], {
-                                  month: "short",
-                                  day: "numeric",
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                })
-                              : "";
-                            return (
-                              <tr key={`${playerId}-${match.matchId}`}>
-                                <td className="px-2 py-1 text-slate-300">
-                                  {label}
-                                  {startTime ? ` - ${startTime}` : ""}
-                                </td>
-                                <td className="px-2 py-1">{match.basePoints}</td>
-                                <td className="px-2 py-1">{match.motmBonus}</td>
-                                <td className="px-2 py-1 text-slate-200">
-                                  {totalMatch}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        <div className="text-sm text-slate-400">
+          Player match breakdown is available once admin enters player points.
         </div>
       </div>
     </div>
@@ -426,14 +261,10 @@ function GroundRow({
   title,
   players,
   team,
-  statsMap,
-  playerRoleMap,
 }: {
   title: string;
   players: Array<Player | undefined>;
   team: LeaderboardTeam;
-  statsMap: Map<string, MatchStats[]>;
-  playerRoleMap: Map<string, PlayerRole>;
 }) {
   const validPlayers = players.filter(Boolean);
   if (validPlayers.length === 0) return null;
@@ -446,19 +277,8 @@ function GroundRow({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {validPlayers.map(player => {
           const id = player!.id;
-          const role = (playerRoleMap.get(id) ?? player!.role) as PlayerRole;
-          const matches = statsMap.get(id) || [];
           const isCaptain = team.captainId === id;
           const isVice = team.viceCaptainId === id;
-          const breakdown = scorePlayerBreakdown(
-            matches,
-            role,
-            isCaptain,
-            isVice
-          );
-          const multiplier = isCaptain ? 2 : isVice ? 1.5 : 1;
-          const total =
-            Math.round(breakdown.basePoints * multiplier) + breakdown.motmBonus;
 
           return (
             <div
@@ -474,7 +294,7 @@ function GroundRow({
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-slate-300">Pts {total}</div>
+                <div className="text-xs text-slate-300">Pts -</div>
               </div>
               <div className="text-xs text-slate-400 mt-1">
                 {player!.role} · {player!.country} · {player!.credit} cr

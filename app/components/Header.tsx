@@ -36,7 +36,7 @@ export default function Header() {
                 href="/admin/match-stats"
                 className="text-indigo-300 hover:underline"
               >
-                Admin: Match Stats
+                Admin: Player Points
               </Link>
             </>
           )}

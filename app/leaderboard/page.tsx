@@ -3,18 +3,18 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { leaderboardTeams as baseLeaderboardTeams, LeaderboardTeam } from "@/data/leaderboard";
-import { scoreLockedTeams, scoreTeam } from "@/utils/scoring";
-import { useMatchStats } from "@/hooks/useMatchStats";
-import { players } from "@/data/players";
 import { teamShort } from "@/utils/teamCodes";
 import { useTournament } from "@/hooks/useTournament";
 import { getJSON } from "@/utils/storage";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchLeaderboardTeams } from "@/utils/leaderboardPersistence";
-import { fetchAllLockHistory, type LockedHistoryRow } from "@/utils/lockHistoryPersistence";
 import { useTeam } from "@/hooks/useTeam";
 import { fetchLeagueMembers, fetchUserLeagues } from "@/utils/leaguePersistence";
 import { supabase, isSupabaseConfigured } from "@/utils/supabaseClient";
+import {
+  fetchLeaderboardTotals,
+  fetchUsersTotalPoints,
+} from "@/utils/pointsPersistence";
 
 type LeagueEntry = {
   userId: string;
@@ -29,16 +29,7 @@ type LeagueDetail = {
   entries: LeagueEntry[];
 };
 
-type LeaderboardWorkingTeam = {
-  players?: string[];
-  captainId?: string | null;
-  viceCaptainId?: string | null;
-};
 
-type MemberTeamRow = {
-  user_id: string;
-  working_team: LeaderboardWorkingTeam | null;
-};
 
 export default function LeaderboardPage() {
   const tournament = useTournament();
@@ -50,28 +41,23 @@ export default function LeaderboardPage() {
     }
     return baseLeaderboardTeams;
   });
-  const { stats, refresh, isRefreshing } = useMatchStats();
   const { user, ready, isConfigured } = useAuth();
   const [remoteTeams, setRemoteTeams] = useState<LeaderboardTeam[] | null>(null);
-  const [lockedHistory, setLockedHistory] = useState<LockedHistoryRow[]>([]);
   const [leagueDetails, setLeagueDetails] = useState<LeagueDetail[]>([]);
   const [loadingLeagues, setLoadingLeagues] = useState(false);
   const [activeTab, setActiveTab] = useState<"global" | "private">("global");
-
-  const playerRoleMap = useMemo(
-    () => new Map(players.map(player => [player.id, player.role])),
-    []
-  );
-
-  const statsMap = useMemo(() => {
-    return new Map(stats.map(stat => [stat.playerId, stat.matches]));
-  }, [stats]);
 
   useEffect(() => {
     if (!ready) return;
     if (user && isConfigured) {
       const loadRemote = async () => {
-        const rows = await fetchLeaderboardTeams();
+        const [rows, totals] = await Promise.all([
+          fetchLeaderboardTeams(),
+          fetchLeaderboardTotals(),
+        ]);
+        const totalMap = new Map(
+          totals.map(row => [row.user_id, Number(row.total_points ?? 0)])
+        );
         const mapped: LeaderboardTeam[] = rows.map(row => ({
           id: row.user_id,
           name: row.team_name || "Team",
@@ -79,12 +65,10 @@ export default function LeaderboardPage() {
           captainId: row.working_team?.captainId || "",
           viceCaptainId: row.working_team?.viceCaptainId || "",
           rank: 0,
-          score: 0,
+          score: totalMap.get(row.user_id) ?? 0,
           subsLeft: row.subs_used ?? 0,
         }));
         setRemoteTeams(mapped);
-        const locked = await fetchAllLockHistory();
-        setLockedHistory(locked);
       };
       loadRemote();
       return;
@@ -98,25 +82,12 @@ export default function LeaderboardPage() {
       setLoadingLeagues(true);
       const leagues = await fetchUserLeagues(user.id);
       const details: LeagueDetail[] = [];
-      const locked = await fetchAllLockHistory();
-      const lockedByUser = new Map<string, LockedHistoryRow[]>();
-      locked.forEach(row => {
-        const list = lockedByUser.get(row.user_id) || [];
-        list.push(row);
-        lockedByUser.set(row.user_id, list);
-      });
 
       for (const league of leagues) {
         const members = await fetchLeagueMembers(league.id);
         const memberIds = members.map(member => member.user_id);
-        let memberTeams: MemberTeamRow[] = [];
         const memberNameMap = new Map<string, string>();
         if (memberIds.length > 0 && supabase) {
-          const { data } = await supabase
-            .from("user_teams")
-            .select("user_id, working_team")
-            .in("user_id", memberIds);
-          memberTeams = (data as unknown as MemberTeamRow[]) || [];
           const { data: profiles } = await supabase
             .from("user_profiles")
             .select("user_id, team_name")
@@ -128,40 +99,15 @@ export default function LeaderboardPage() {
           });
         }
 
-        const scored = members.map(member => {
-          const teamRow = memberTeams.find(
-            entry => entry.user_id === member.user_id
-          );
-          const lockedRows = lockedByUser.get(member.user_id) || [];
-          const lockedTeams = lockedRows.map(entry => ({
-            matchId: entry.match_id,
-            players: entry.players,
-            captainId: entry.captain_id,
-            viceCaptainId: entry.vice_captain_id,
-          }));
-          const score =
-            lockedTeams.length > 0
-              ? scoreLockedTeams({
-                  lockedTeams,
-                  playerRoleMap,
-                  statsMap,
-                })
-              : scoreTeam({
-                  playerIds: teamRow?.working_team?.players || [],
-                  captainId: teamRow?.working_team?.captainId || null,
-                  viceCaptainId: teamRow?.working_team?.viceCaptainId || null,
-                  playerRoleMap,
-                  statsMap,
-                });
-          return {
-            userId: member.user_id,
-            name:
-              memberNameMap.get(member.user_id) ||
-              member.team_name ||
-              "Team",
-            score,
-          };
-        });
+        const totalsMap = await fetchUsersTotalPoints(memberIds);
+        const scored = members.map(member => ({
+          userId: member.user_id,
+          name:
+            memberNameMap.get(member.user_id) ||
+            member.team_name ||
+            "Team",
+          score: totalsMap.get(member.user_id) ?? 0,
+        }));
         const sorted = [...scored]
           .sort((a, b) => b.score - a.score)
           .map((entry, index) => ({
@@ -179,73 +125,20 @@ export default function LeaderboardPage() {
       setLoadingLeagues(false);
     };
     loadLeagues();
-  }, [user, statsMap, playerRoleMap]);
+  }, [user]);
 
   const displayTeams = useMemo(() => {
-    const lockedByUser = new Map<string, LockedHistoryRow[]>();
-    const lockedLatest = new Map<string, number>();
-    lockedHistory.forEach(row => {
-      const list = lockedByUser.get(row.user_id) || [];
-      list.push(row);
-      lockedByUser.set(row.user_id, list);
-      const prev = lockedLatest.get(row.user_id) ?? 0;
-      if (row.match_id > prev) lockedLatest.set(row.user_id, row.match_id);
-    });
     const base = remoteTeams ?? leaderboardTeams;
-    const scored = base.map(team => {
-      const isMe = Boolean(user && team.id === user.id);
-      const lockedRows = lockedByUser.get(team.id);
-      const lockedTeams =
-        lockedRows?.map(row => ({
-          matchId: row.match_id,
-          players: row.players,
-          captainId: row.captain_id,
-          viceCaptainId: row.vice_captain_id,
-        })) || [];
-      const score =
-        lockedTeams.length > 0
-          ? scoreLockedTeams({
-              lockedTeams,
-              playerRoleMap,
-              statsMap,
-            })
-          : isMe && myTeam.lockedTeams.length > 0
-          ? scoreLockedTeams({
-              lockedTeams: myTeam.lockedTeams,
-              playerRoleMap,
-              statsMap,
-            })
-          : scoreTeam({
-              playerIds: team.players,
-              captainId: team.captainId,
-              viceCaptainId: team.viceCaptainId,
-              playerRoleMap,
-              statsMap,
-            });
-      return {
-        ...team,
-        score,
-        lockedThrough:
-          lockedLatest.get(team.id) ??
-          (isMe && myTeam.lockedTeams.length > 0
-            ? Math.max(...myTeam.lockedTeams.map(lock => lock.matchId))
-            : undefined),
-      };
-    });
-    const sorted = [...scored].sort((a, b) => b.score - a.score);
+    const sorted = [...base].sort((a, b) => b.score - a.score);
     return sorted.map((team, index) => ({
       ...team,
       rank: index + 1,
+      lockedThrough:
+        team.id === user?.id && myTeam.lockedTeams.length > 0
+          ? Math.max(...myTeam.lockedTeams.map(lock => lock.matchId))
+          : undefined,
     }));
-  }, [
-    remoteTeams,
-    leaderboardTeams,
-    playerRoleMap,
-    statsMap,
-    user,
-    myTeam.lockedTeams,
-    lockedHistory,
-  ]);
+  }, [remoteTeams, leaderboardTeams, user, myTeam.lockedTeams]);
 
   const myEntry = useMemo(() => {
     if (!user) return null;
@@ -290,17 +183,10 @@ export default function LeaderboardPage() {
               </p>
             )}
             <p className="text-[10px] text-slate-400 mt-1">
-              Scores update every 5 minutes.
+              Scores update after admin submits match points.
             </p>
           </div>
           <div className="flex items-center gap-3 text-[11px]">
-            <button
-              onClick={refresh}
-              disabled={isRefreshing}
-              className="rounded bg-indigo-600 px-3 py-1 text-xs disabled:opacity-60"
-            >
-              {isRefreshing ? "Refreshing..." : "Refresh Scores"}
-            </button>
             <Link href="/" className="text-indigo-300 hover:underline">
               Home
             </Link>
